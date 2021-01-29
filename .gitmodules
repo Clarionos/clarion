@@ -1,3 +1,15 @@
 [submodule "external/Catch2"]
 	path = external/Catch2
 	url = https://github.com/catchorg/Catch2.git
+[submodule "external/folly"]
+	path = external/folly
+	url = https://github.com/facebook/folly.git
+[submodule "external/fmt"]
+	path = external/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "external/fizz"]
+	path = external/fizz
+	url = https://github.com/facebookincubator/fizz.git
+[submodule "external/mvfst"]
+	path = external/mvfst
+	url = git@github.com:facebookincubator/mvfst.git
