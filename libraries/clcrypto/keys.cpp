@@ -1,5 +1,7 @@
 #include <clcrypto/base58.hpp>
 #include <clio/murmur.hpp>
+#include <cstring>
+#include <stdexcept>
 
 namespace clcrypto {
 

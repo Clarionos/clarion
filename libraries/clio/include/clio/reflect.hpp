@@ -73,8 +73,9 @@ namespace clio {
 
       
  #define B1IO_REFLECT_FOREACH_INTERNAL( r, OP, i, member) \
-      (void)lambda( clio::meta{ .number = i+1 , \
+      (void)lambda( clio::meta{ \
                           .name =  BOOST_PP_STRINGIZE(member), \
+                          .number = i+1 , \
                          }, \
               &OP::member);\
 

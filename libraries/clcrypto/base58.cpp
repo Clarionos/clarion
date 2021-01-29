@@ -1,5 +1,6 @@
 #include <clcrypto/base58.hpp>
 #include <array>
+#include <cstring>
 #include <vector>
 
 namespace clcrypto {
