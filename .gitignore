@@ -2,3 +2,5 @@
 CMakeFiles
 Makefile
 CMakeCache.txt
+*.a
+*.o

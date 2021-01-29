@@ -1,4 +1,4 @@
-add_subdirectory( quill )
+#add_subdirectory( quill )
 add_subdirectory( Catch2 )
 add_subdirectory( secp256k1 )
 
