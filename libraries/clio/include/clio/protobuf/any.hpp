@@ -23,7 +23,7 @@ namespace clio {
             uint32_t    number;
             value_type  value;
         };
-        B1IO_REFLECT( entry, number, value )
+        CLIO_REFLECT( entry, number, value )
 
         /**
          *  This class can be used to hold the
@@ -80,7 +80,7 @@ namespace clio {
                 members.push_back( entry{ field, *reinterpret_cast<int32_t*>(&s) } );
             }
         };
-        B1IO_REFLECT( any, members )
+        CLIO_REFLECT( any, members )
 
 
         template<typename Stream>

@@ -12,10 +12,10 @@
 
 namespace clio {
 
-#define B1IO_REFLECT_TYPENAME( T ) \
+#define CLIO_REFLECT_TYPENAME( T ) \
    constexpr const char* get_type_name( const T* ) { return BOOST_PP_STRINGIZE(T); } 
 
-#define B1IO_REFLECT_TYPENAME_CUSTOM( T, CUSTOM ) \
+#define CLIO_REFLECT_TYPENAME_CUSTOM( T, CUSTOM ) \
    constexpr const char* get_type_name( const T* ) { return BOOST_PP_STRINGIZE(CUSTOM); } 
 
 constexpr const char* get_type_name(const bool*) { return "bool"; }

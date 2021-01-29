@@ -114,12 +114,12 @@ namespace clcrypto {
     using k1sig = ecc_signature<k1>;
     using r1sig = ecc_signature<r1>;
 
-    B1IO_REFLECT_TYPENAME( k1pub );
-    B1IO_REFLECT_TYPENAME( r1pub );
-    B1IO_REFLECT_TYPENAME( k1pri );
-    B1IO_REFLECT_TYPENAME( r1pri );
-    B1IO_REFLECT_TYPENAME( k1sig );
-    B1IO_REFLECT_TYPENAME( r1sig );
+    CLIO_REFLECT_TYPENAME( k1pub );
+    CLIO_REFLECT_TYPENAME( r1pub );
+    CLIO_REFLECT_TYPENAME( k1pri );
+    CLIO_REFLECT_TYPENAME( r1pri );
+    CLIO_REFLECT_TYPENAME( k1sig );
+    CLIO_REFLECT_TYPENAME( r1sig );
     
     /* This should be covered by trivially_copyable impl of serialization functions
      *

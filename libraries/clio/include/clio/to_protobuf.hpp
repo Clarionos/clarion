@@ -144,7 +144,7 @@ std::vector<char> to_protobuf(const T& t) {
 
    if (fbs.pos != fbs.end)
        throw_error( stream_error::underrun );
-   return std::move(result);
+   return result;
 }
 
 

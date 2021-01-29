@@ -32,7 +32,7 @@ struct no_sub {
     double   myd = 3.14;
     uint16_t my16 = 22;;
 };
-B1IO_REFLECT( no_sub, myd, my16 );
+CLIO_REFLECT( no_sub, myd, my16 );
 
 struct sub_obj {
     int a;
@@ -41,7 +41,7 @@ struct sub_obj {
     std::string substr;
     no_sub ns;
 };
-B1IO_REFLECT( sub_obj, a, b, c, substr, ns  );
+CLIO_REFLECT( sub_obj, a, b, c, substr, ns  );
 
 struct flat_object {
     non_reflect_type         non_ref;
@@ -55,7 +55,7 @@ struct flat_object {
     sub_obj                  sub;    
     clio::flat_ptr<sub_obj>  sub_view;
 };
-B1IO_REFLECT( flat_object,  non_ref, x, y, z, veci, vecstr, vecns, nested, sub, sub_view );
+CLIO_REFLECT( flat_object,  non_ref, x, y, z, veci, vecstr, vecns, nested, sub, sub_view );
 
 
 struct fat {
@@ -63,13 +63,13 @@ struct fat {
     uint16_t b;
     std::string substr;
 };
-B1IO_REFLECT( fat, a, b, substr );
+CLIO_REFLECT( fat, a, b, substr );
 
 struct root {
     std::string         other;
     clio::flat_ptr<fat> fatptr;
 };
-B1IO_REFLECT( root, other, fatptr );
+CLIO_REFLECT( root, other, fatptr );
 
 TEST_CASE( "flatptr" ) {
    constexpr uint32_t offseta = clio::get_tuple_offset<0,std::tuple<sub_obj,clio::flat_ptr<sub_obj>> >::value;
@@ -109,8 +109,8 @@ TEST_CASE( "flatptr" ) {
 //    std::cerr<< "sub.a: " << std::hex << me->sub->a<<"\n";
     std::cerr << "sub_view->get()->a: \n";
     int x = me->sub_view->a;
-    /*
     std::cerr<< "sub_view.a: " << std::hex << x <<"\n";
+    /*
 
     int y = me->sub->a.get();
     std::cerr<< "sub.a: " << std::hex << y <<"\n";

@@ -22,7 +22,7 @@ namespace benchmark {
         double   myd = 3.14;
         uint16_t my16 = 22;;
     };
-    B1IO_REFLECT( no_sub, myd, my16 );
+    CLIO_REFLECT( no_sub, myd, my16 );
 
     struct sub_obj {
         int a;
@@ -30,7 +30,7 @@ namespace benchmark {
         std::string substr;
         no_sub ns;
     };
-    B1IO_REFLECT( sub_obj, a, b, ns, substr );
+    CLIO_REFLECT( sub_obj, a, b, ns, substr );
 
     struct flat_object {
         uint32_t                 x;   
@@ -42,7 +42,7 @@ namespace benchmark {
         std::vector<flat_object> nested;
         sub_obj                  sub;    
     };
-    B1IO_REFLECT( flat_object, x, y, z, veci, vecstr, vecns, nested, sub );
+    CLIO_REFLECT( flat_object, x, y, z, veci, vecstr, vecns, nested, sub );
 }
 
 
@@ -314,7 +314,7 @@ TEST_CASE( "benchmark" )
             clio::fixed_buf_stream ps(buf.data(), buf.size() );
             clio::flatpack( tester, ps );
 
-            clio::size_stream capsize;
+            //clio::size_stream capsize;
 
             std::vector<char> buf2(ss.size);
             clio::fixed_buf_stream capout(buf2.data(), buf2.size() );

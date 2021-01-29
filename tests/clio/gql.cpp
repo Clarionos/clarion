@@ -18,7 +18,7 @@ struct service {
     }
 };
 
-B1IO_REFLECT_PB( service, 
+CLIO_REFLECT_PB( service, 
                  (add, 0, a, b ),
                  (sub, 1, a, b ) )
 

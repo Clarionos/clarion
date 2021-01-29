@@ -53,8 +53,8 @@ namespace clio {
                value_type value;
         };
         using scalar_value = scalar::value_type;
-        B1IO_REFLECT_TYPENAME_CUSTOM( null_t, null )
-        B1IO_REFLECT_TYPENAME_CUSTOM( scalar_value, scalar )
+        CLIO_REFLECT_TYPENAME_CUSTOM( null_t, null )
+        CLIO_REFLECT_TYPENAME_CUSTOM( scalar_value, scalar )
 
         /**
          *  The key/value pair of an object
@@ -86,10 +86,10 @@ namespace clio {
             /// for each type... define the filter...
             std::vector<query_filter> filter;
         };
-        B1IO_REFLECT( scalar, value )
-        B1IO_REFLECT( entry, key, value )
-        B1IO_REFLECT( query_filter, filter, type )
-        B1IO_REFLECT( query, key, alias, args, filter )
+        CLIO_REFLECT( scalar, value )
+        CLIO_REFLECT( entry, key, value )
+        CLIO_REFLECT( query_filter, filter, type )
+        CLIO_REFLECT( query, key, alias, args, filter )
 
     } // namespace graphql
 

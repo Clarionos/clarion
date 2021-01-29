@@ -18,8 +18,8 @@ namespace clio {
             json::any   args;  /// args as json encoded tuple, or named object
             json_query  filter; /// apply to result 
         };
-        B1IO_REFLECT( json_field_query, name, args, filter )
-        B1IO_REFLECT( json_query, fields )
+        CLIO_REFLECT( json_field_query, name, args, filter )
+        CLIO_REFLECT( json_query, fields )
 
 
         /**

@@ -32,17 +32,17 @@ namespace clio {
         vector<type_name> types;
     };
 
-    B1IO_REFLECT( variant_type, types )
+    CLIO_REFLECT( variant_type, types )
 
     struct tuple_type {
         vector<type_name> types;
     };
-    B1IO_REFLECT( tuple_type, types )
+    CLIO_REFLECT( tuple_type, types )
 
     struct vector_type {
         type_name type;
     };
-    B1IO_REFLECT( vector_type, type )
+    CLIO_REFLECT( vector_type, type )
 
 
     struct enum_type {
@@ -54,8 +54,8 @@ namespace clio {
         vector<enum_value> values;
     };
     using enum_value = enum_type::enum_value;
-    B1IO_REFLECT( enum_value, name, value )
-    B1IO_REFLECT( enum_type, values )
+    CLIO_REFLECT( enum_value, name, value )
+    CLIO_REFLECT( enum_type, values )
 
     /*
     struct function_type {
@@ -67,8 +67,8 @@ namespace clio {
         type_name         result;
     };
     using function_parameter = function_type::parameter;
-    B1IO_REFLECT( function_parameter, type, name )
-    B1IO_REFLECT( function_type, args, result )
+    CLIO_REFLECT( function_parameter, type, name )
+    CLIO_REFLECT( function_type, args, result )
     */
 
     struct object_type {
@@ -127,14 +127,14 @@ namespace clio {
 
     using object_member       = object_type::member;
     using object_method_param = object_type::member::param;
-    B1IO_REFLECT( object_method_param, name, type )
-    B1IO_REFLECT( object_member, name, type, number, params )
-    B1IO_REFLECT( object_type, members )
+    CLIO_REFLECT( object_method_param, name, type )
+    CLIO_REFLECT( object_member, name, type, number, params )
+    CLIO_REFLECT( object_type, members )
 
     struct typedef_type {
         type_name type;
     };
-    B1IO_REFLECT( typedef_type, type )
+    CLIO_REFLECT( typedef_type, type )
 
     using schema_type = std::variant<
                         object_type,
@@ -143,7 +143,7 @@ namespace clio {
                         vector_type,
                         enum_type,
                         typedef_type>;
-    B1IO_REFLECT_TYPENAME( schema_type )
+    CLIO_REFLECT_TYPENAME( schema_type )
 
 
 
@@ -275,7 +275,7 @@ namespace clio {
         } /// generate
     };
 
-    B1IO_REFLECT( schema, types )
+    CLIO_REFLECT( schema, types )
 
 
 } /// clio
@@ -283,6 +283,6 @@ namespace clio {
 namespace std {
     namespace {
         using clio::schema_type;
-        B1IO_REFLECT_TYPENAME( schema_type )
+        CLIO_REFLECT_TYPENAME( schema_type )
     }
 }

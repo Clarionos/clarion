@@ -12,8 +12,8 @@ set( CMAKE_PROJECT_VERSION_MAJOR    0 )
 set( CMAKE_PROJECT_VERSION_MINOR    0 )
 set( CMAKE_PROJECT_VERSION_PATCH    0 )
 
-find_package( Boost REQUIRED )
-
+find_package(Boost REQUIRED COMPONENTS filesystem program_options)
+find_package(Git)
 
 IF(NOT "$ENV{OPENSSL_ROOT_DIR}" STREQUAL "")
   set(OPENSSL_ROOT_DIR $ENV{OPENSSL_ROOT_DIR} )
@@ -24,6 +24,22 @@ if(APPLE AND UNIX AND "${OPENSSL_ROOT_DIR}" STREQUAL "")
    set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl@1.1")
 endif()
 find_package( OpenSSL REQUIRED )
+
+
+if( APPLE )
+  # Apple Specific Options Here
+  message( STATUS "Configuring AppBase on OS X" )
+  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-conversion -Wno-deprecated-declarations" )
+else( APPLE )
+  # Linux Specific Options Here
+  message( STATUS "Configuring AppBase on Linux" )
+  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall" )
+  if ( FULL_STATIC_BUILD )
+    set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+  endif ( FULL_STATIC_BUILD )
+endif( APPLE )
+
+
 
 add_subdirectory( libraries )
 add_subdirectory( tests )

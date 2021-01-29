@@ -151,13 +151,13 @@ void from_protobuf_object( T& obj, S& stream ) {
         uint16_t wire_type = uint8_t(key) & 0x07;
         uint32_t number    = key >> 3;
 
-        bool skip_it = true;
+        //bool skip_it = true;
         if( not reflect<T>::get( number, [&]( auto m ) {
             if constexpr ( std::is_member_function_pointer_v<decltype(m)> ) {
                 skip_member( wire_type, stream ); /// we cannot store return value of functions in T
             } else {
-                using member_type = std::decay_t<decltype( obj.*m )>;
-                auto& member = obj.*m;
+                //using member_type = std::decay_t<decltype( obj.*m )>;
+                //auto& member = obj.*m;
                 from_protobuf_member( obj.*m, stream );
             }
         }) ) { // if not reflect<T>::get(number...)

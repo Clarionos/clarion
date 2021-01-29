@@ -30,7 +30,7 @@ struct service {
     }
 };
 
-B1IO_REFLECT( service, add, sub )
+CLIO_REFLECT( service, add, sub )
 
 
 TEST_CASE( "try calling methods via protobuf", "[protobuf]" ) 

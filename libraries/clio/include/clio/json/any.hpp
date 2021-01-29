@@ -82,9 +82,9 @@ namespace clio {
             std::string key;
             any    value;
         };
-        B1IO_REFLECT( entry, key, value )
-        B1IO_REFLECT_TYPENAME( null_t )
-        B1IO_REFLECT( error_t, what )
+        CLIO_REFLECT( entry, key, value )
+        CLIO_REFLECT_TYPENAME( null_t )
+        CLIO_REFLECT( error_t, what )
         
         
         inline any any::operator[]( const std::string_view& key )const {

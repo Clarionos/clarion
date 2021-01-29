@@ -25,9 +25,9 @@ namespace clio {
             query      filter; /// apply to result 
         };
 
-        B1IO_REFLECT( variant_query, type, fields )
-        B1IO_REFLECT( field_query, number, args, filter )
-        B1IO_REFLECT( query, fields, variant_fields )
+        CLIO_REFLECT( variant_query, type, fields )
+        CLIO_REFLECT( field_query, number, args, filter )
+        CLIO_REFLECT( query, fields, variant_fields )
 
 
 

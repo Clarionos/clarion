@@ -263,7 +263,7 @@ namespace clio {
                     uint32_t key = 0;
                     varuint32_from_bin( key, in );
                     wire_type_enum type = wire_type_enum(uint8_t(key) & 0x07);
-                    uint32_t number = key >> 3;
+                    //uint32_t number = key >> 3;
                    
                     auto contained_type = vtype->type;
                    
