@@ -5,3 +5,4 @@ CMakeCache.txt
 *.a
 *.o
 build
+tests/clio/clio_tests

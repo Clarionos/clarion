@@ -27,6 +27,7 @@ struct stream_adaptor {
    int  idx = 0;
 };
 
+
 // Replaces any invalid utf-8 bytes with ?
 template <typename S>
 void to_json(std::string_view sv, S& stream) {
@@ -196,37 +197,44 @@ void to_json(const std::tuple<T...>& obj, S& stream) {
 
 template <typename T, typename S>
 void to_json(const T& t, S& stream) {
-   bool         first = true;
-   stream.write('{');
-   reflect<T>::for_each([&]( const clio::meta& ref, auto&& member) {
-      if constexpr ( not std::is_member_function_pointer_v<std::decay_t<decltype(member)>> ) {
-              auto addfield = [&]() {
-                if (first) {
-                   increase_indent(stream);
-                   first = false;
-                } else {
-                   stream.write(',');
-                }
-                write_newline(stream);
-                to_json(ref.name, stream);
-                write_colon(stream);
-                to_json( t.*member, stream);
-             };
+   if constexpr ( not reflect<T>::is_defined  ) {
+       stream.write('"');
+       std::string str(t);
+       stream.write( str.data(), str.size() );
+       stream.write('"');
+   } else {
+       bool         first = true;
+       stream.write('{');
+       reflect<T>::for_each([&]( const clio::meta& ref, auto&& member) {
+          if constexpr ( not std::is_member_function_pointer_v<std::decay_t<decltype(member)>> ) {
+                  auto addfield = [&]() {
+                    if (first) {
+                       increase_indent(stream);
+                       first = false;
+                    } else {
+                       stream.write(',');
+                    }
+                    write_newline(stream);
+                    to_json(ref.name, stream);
+                    write_colon(stream);
+                    to_json( t.*member, stream);
+                 };
 
-             using member_type = std::decay_t<decltype(t.*member)>;
-             if constexpr ( not is_std_optional<member_type>::value ) {
-                addfield();
-             } else {
-                if( !!(t.*member) ) 
-                   addfield();
-             }
-      }
-   });
-   if (!first) {
-      decrease_indent(stream);
-      write_newline(stream);
+                 using member_type = std::decay_t<decltype(t.*member)>;
+                 if constexpr ( not is_std_optional<member_type>::value ) {
+                    addfield();
+                 } else {
+                    if( !!(t.*member) ) 
+                       addfield();
+                 }
+          }
+       });
+       if (!first) {
+          decrease_indent(stream);
+          write_newline(stream);
+       }
+       stream.write('}');
    }
-   stream.write('}');
 }
 
 template <typename S>

@@ -9,6 +9,5 @@ struct bytes {
 };
 
 CLIO_REFLECT(bytes, data);
-//EOSIO_COMPARE(bytes);
 
 } // namespace clio 
