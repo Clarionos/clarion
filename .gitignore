@@ -6,3 +6,6 @@ CMakeCache.txt
 *.o
 build
 tests/clio/clio_tests
+.vscode
+*.wasm
+*.wat
