@@ -11,5 +11,5 @@ tar xf wasi-sdk-12.0-linux.tar.gz
 Compile a.cpp:
 
 ```
-$WASI_SDK_PATH/bin/clang++ --sysroot=$WASI_SDK_PATH/share/wasi-sysroot a.cpp -o a.wasm -Os
+$WASI_SDK_PATH/bin/clang++ --sysroot=$WASI_SDK_PATH/share/wasi-sysroot a.cpp -o a.wasm -Os -Wl,--export-table -std=c++20
 ```

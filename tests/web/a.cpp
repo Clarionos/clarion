@@ -1,27 +1,71 @@
 #include <cstdio>
 #include <cstring>
+#include <experimental/coroutine>
+
+namespace clarion
+{
+    [[clang::import_module("clarion"), clang::import_name("exit"), noreturn]] void exit(uint32_t code);
+
+    [[clang::import_module("clarion"), clang::import_name("console")]] void console(
+        const void *buf, uint32_t size);
+
+    [[noreturn]] inline void fatal(const char *msg)
+    {
+        console(msg, strlen(msg));
+        exit(1);
+    }
+
+    [[clang::import_module("clarion"), clang::import_name("callme_later")]] void callme_later(uint32_t delay_ms, void *p, void (*f)(void *));
+} // namespace clarion
+
+struct later
+{
+    uint32_t delay_ms = 1000;
+
+    bool await_ready() { return false; }
+
+    void await_suspend(std::experimental::coroutines_v1::coroutine_handle<void> co)
+    {
+        clarion::callme_later(delay_ms, co.address(), [](void *p) {
+            std::experimental::coroutines_v1::coroutine_handle<void>::from_address(p).resume();
+        });
+    }
+
+    void await_resume() {}
+};
+
+struct simple_coroutine
+{
+    struct promise_type
+    {
+        promise_type() { printf("promise_type::promise_type\n"); }
+        ~promise_type() { printf("promise_type::~promise_type\n"); }
+        auto initial_suspend() { return std::experimental::coroutines_v1::suspend_never(); }
+        auto final_suspend() noexcept { return std::experimental::coroutines_v1::suspend_never(); }
+        simple_coroutine get_return_object() { return {}; }
+        void unhandled_exception() { std::abort(); }
+        void return_void() {}
+    };
+};
+
+simple_coroutine testco(const char *s, uint32_t delay_ms)
+{
+    for (int i = 0; i < 10; ++i)
+    {
+        printf("s = \"%s\", i = %d\n", s, i);
+        co_await later{delay_ms};
+    }
+    printf("s = %s, finished\n", s);
+}
 
 extern "C"
 {
-    _Noreturn void clarion_exit(uint32_t code) __attribute__((__import_module__("clarion"),
-                                                              __import_name__("exit")));
-
-    void clarion_console(
-        const void *buf, uint32_t size) __attribute__((__import_module__("clarion"),
-                                                       __import_name__("console")));
-
-    _Noreturn void clarion_unimplemented(const char *msg)
-    {
-        clarion_console(msg, strlen(msg));
-        clarion_exit(1);
-    }
-
     // Polyfill
     _Noreturn void __wasi_proc_exit(
         __wasi_exitcode_t code) __attribute__((__import_module__("wasi_snapshot_preview1"),
                                                __import_name__("proc_exit")))
     {
-        clarion_exit(code);
+        clarion::exit(code);
     }
 
     // Polyfill: all file handles are TTYs
@@ -49,7 +93,7 @@ extern "C"
             *nwritten = 0;
         for (; iovs_len; --iovs_len, ++iovs)
         {
-            clarion_console(iovs->buf, iovs->buf_len);
+            clarion::console(iovs->buf, iovs->buf_len);
             if (nwritten)
                 *nwritten += iovs->buf_len;
         }
@@ -63,18 +107,22 @@ extern "C"
         __wasi_filesize_t *newoffset) __attribute__((__import_module__("wasi_snapshot_preview1"),
                                                      __import_name__("fd_seek")))
     {
-        clarion_unimplemented("__wasi_fd_seek unimplemented");
+        clarion::fatal("__wasi_fd_seek fatal");
     }
 
     __wasi_errno_t __wasi_fd_close(
         __wasi_fd_t fd) __attribute__((__import_module__("wasi_snapshot_preview1"),
                                        __import_name__("fd_close")))
     {
-        clarion_unimplemented("__wasi_fd_close unimplemented");
+        clarion::fatal("__wasi_fd_close fatal");
     }
 } // extern "C"
 
 int main()
 {
-    printf("hello\nthere\nworld");
+    printf("starting coroutines...\n");
+    testco("delay 1s", 1000);
+    testco("delay 2s", 2000);
+    testco("delay 3s", 3000);
+    printf("main returned\n");
 }

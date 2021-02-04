@@ -23,6 +23,10 @@
                     console.log(l[i]);
                 consoleBuf = l[l.length - 1];
             },
+
+            callme_later(delay_ms, p, f) {
+                setTimeout(() => instance.exports.__indirect_function_table.get(f)(p), delay_ms);
+            }
         },
     };
 
@@ -31,5 +35,6 @@
     instance = x.instance;
     console.log({ module, instance });
     instance.exports._start();
-    console.log(consoleBuf);
+    if (consoleBuf)
+        console.log(consoleBuf);
 })();
