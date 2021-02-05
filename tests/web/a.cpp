@@ -4,6 +4,8 @@
 
 namespace clarion
 {
+    namespace coro = std::experimental::coroutines_v1;
+
     [[clang::import_module("clarion"), clang::import_name("exit"), noreturn]] void exit(uint32_t code);
 
     [[clang::import_module("clarion"), clang::import_name("console")]] void console(
@@ -16,44 +18,74 @@ namespace clarion
     }
 
     [[clang::import_module("clarion"), clang::import_name("callme_later")]] void callme_later(uint32_t delay_ms, void *p, void (*f)(void *));
+
+    struct later
+    {
+        uint32_t delay_ms = 1000;
+
+        bool await_ready() { return false; }
+
+        void await_suspend(coro::coroutine_handle<void> co)
+        {
+            clarion::callme_later(delay_ms, co.address(), [](void *p) {
+                coro::coroutine_handle<void>::from_address(p).resume();
+            });
+        }
+
+        void await_resume() {}
+    };
+
+    struct task
+    {
+        struct promise_type
+        {
+            promise_type() { printf("promise_type::promise_type\n"); }
+            ~promise_type() { printf("promise_type::~promise_type\n"); }
+            auto initial_suspend() { return coro::suspend_always(); }
+            auto final_suspend() noexcept { return coro::suspend_never(); }
+            task get_return_object() { return {this}; }
+            void unhandled_exception() { std::abort(); }
+            void return_void() {}
+        };
+
+        promise_type *promise = nullptr;
+
+        task() = default;
+        task(promise_type *promise) : promise{promise} {}
+        task(const task &) = delete;
+        task(task &&src)
+        {
+            *this = std::move(src);
+        }
+
+        ~task()
+        {
+            if (promise)
+                coro::coroutine_handle<promise_type>::from_promise(*promise).destroy();
+        }
+
+        task &operator=(const task &) = delete;
+        task &operator=(task &&src)
+        {
+            promise = src.promise;
+            src.promise = nullptr;
+            return *this;
+        }
+
+        void start()
+        {
+            coro::coroutine_handle<promise_type>::from_promise(*promise).resume();
+            promise = nullptr;
+        }
+    }; // task
 } // namespace clarion
 
-struct later
-{
-    uint32_t delay_ms = 1000;
-
-    bool await_ready() { return false; }
-
-    void await_suspend(std::experimental::coroutines_v1::coroutine_handle<void> co)
-    {
-        clarion::callme_later(delay_ms, co.address(), [](void *p) {
-            std::experimental::coroutines_v1::coroutine_handle<void>::from_address(p).resume();
-        });
-    }
-
-    void await_resume() {}
-};
-
-struct simple_coroutine
-{
-    struct promise_type
-    {
-        promise_type() { printf("promise_type::promise_type\n"); }
-        ~promise_type() { printf("promise_type::~promise_type\n"); }
-        auto initial_suspend() { return std::experimental::coroutines_v1::suspend_never(); }
-        auto final_suspend() noexcept { return std::experimental::coroutines_v1::suspend_never(); }
-        simple_coroutine get_return_object() { return {}; }
-        void unhandled_exception() { std::abort(); }
-        void return_void() {}
-    };
-};
-
-simple_coroutine testco(const char *s, uint32_t delay_ms)
+clarion::task testco(const char *s, uint32_t delay_ms)
 {
     for (int i = 0; i < 10; ++i)
     {
         printf("s = \"%s\", i = %d\n", s, i);
-        co_await later{delay_ms};
+        co_await clarion::later{delay_ms};
     }
     printf("s = %s, finished\n", s);
 }
@@ -121,8 +153,8 @@ extern "C"
 int main()
 {
     printf("starting coroutines...\n");
-    testco("delay 1s", 1000);
-    testco("delay 2s", 2000);
-    testco("delay 3s", 3000);
+    testco("delay 1s", 1000).start();
+    testco("delay 2s", 2000).start();
+    testco("delay 3s", 3000).start();
     printf("main returned\n");
 }
