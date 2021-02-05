@@ -1,7 +1,10 @@
 #include <cstdio>
 #include <cstring>
 #include <experimental/coroutine>
+#include <functional>
+#include <string_view>
 #include <string>
+#include <tuple>
 
 namespace clarion
 {
@@ -17,24 +20,6 @@ namespace clarion
         console(msg, strlen(msg));
         exit(1);
     }
-
-    [[clang::import_module("clarion"), clang::import_name("callme_later")]] void callme_later(uint32_t delay_ms, void *p, void (*f)(void *));
-
-    struct later
-    {
-        uint32_t delay_ms = 1000;
-
-        bool await_ready() { return false; }
-
-        void await_suspend(coro::coroutine_handle<void> co)
-        {
-            clarion::callme_later(delay_ms, co.address(), [](void *p) {
-                coro::coroutine_handle<void>::from_address(p).resume();
-            });
-        }
-
-        void await_resume() {}
-    };
 
     template <typename Ret = void>
     struct task;
@@ -154,6 +139,110 @@ namespace clarion
 
         void await_resume() {}
     };
+
+    // An awaitable which invokes an external async function, then feeds
+    // the result through a lambda
+    template <typename Ret, auto extFn, typename Args, typename Lambda>
+    struct call_async_awaitable
+    {
+        Args args;
+        Lambda lambda;
+        coro::coroutine_handle<void> co;
+        Ret result;
+
+        bool await_ready() { return false; }
+
+        void await_suspend(coro::coroutine_handle<void> co)
+        {
+            this->co = co;
+            auto post_process = [](void *p, auto... result) {
+                auto self = (call_async_awaitable *)p;
+                self->result = std::invoke(self->lambda, result...);
+                self->co.resume();
+            };
+            std::apply(extFn, std::tuple_cat(args, std::tuple{this, post_process}));
+        }
+
+        Ret await_resume() { return std::move(result); }
+    };
+
+    template <auto extFn, typename Args, typename Lambda>
+    struct call_async_awaitable<void, extFn, Args, Lambda>
+    {
+        Args args;
+        Lambda lambda;
+        coro::coroutine_handle<void> co;
+
+        bool await_ready() { return false; }
+
+        void await_suspend(coro::coroutine_handle<void> co)
+        {
+            this->co = co;
+            auto post_process = [](void *p, auto... result) {
+                auto self = (call_async_awaitable *)p;
+                std::invoke(self->lambda, result...);
+                self->co.resume();
+            };
+            std::apply(extFn, std::tuple_cat(args, std::tuple{this, post_process}));
+        }
+
+        void await_resume() {}
+    };
+
+    // Return an awaitable which invokes an external async function, then feeds
+    // the result through a lambda
+    template <typename Ret, auto extFn, typename Args, typename Lambda>
+    auto call_external_async(Args args, Lambda lambda)
+    {
+        return call_async_awaitable<Ret, extFn, Args, Lambda>{std::move(args), std::move(lambda)};
+    }
+
+    [[clang::import_module("clarion"), clang::import_name("callme_later")]] void callme_later(uint32_t delay_ms, void *p, void (*f)(void *));
+    inline auto later(uint32_t delay_ms)
+    {
+        return call_external_async<void, callme_later>(std::tuple{delay_ms}, [] {});
+    }
+
+    [[clang::import_module("clarion"), clang::import_name("release_object")]] void release_object(void *handle);
+
+    template <typename Tag>
+    struct external_object
+    {
+        Tag *handle = nullptr;
+
+        external_object() = default;
+        external_object(Tag *handle) : handle{handle} {}
+        external_object(const external_object &) = delete;
+        external_object(external_object &&src) { *this = std::move(src); }
+
+        ~external_object()
+        {
+            if (handle)
+                release_object(handle);
+        }
+
+        external_object &operator=(const external_object &) = delete;
+        external_object &operator=(external_object &&src)
+        {
+            handle = src.handle;
+            src.handle = nullptr;
+            return *this;
+        }
+    };
+
+    struct db_tag;
+    [[clang::import_module("clarion"), clang::import_name("open_db")]] void open_db_raw(const char *name, uint32_t len, void *p, void (*f)(void *p, db_tag *db));
+
+    struct database : external_object<db_tag>
+    {
+        using external_object<db_tag>::external_object;
+    };
+
+    auto open_db(std::string_view name)
+    {
+        return call_external_async<database, open_db_raw>(std::tuple{name.begin(), name.size()}, [](db_tag *db) { return db; });
+    }
+
 } // namespace clarion
 
 clarion::task<std::string> testco(std::string s, uint32_t delay_ms)
@@ -163,7 +252,7 @@ clarion::task<std::string> testco(std::string s, uint32_t delay_ms)
     {
         printf("s = \"%s\", i = %d\n", s.c_str(), i);
         result += "(" + s + ")";
-        co_await clarion::later{delay_ms};
+        co_await clarion::later(delay_ms);
     }
     printf("s = \" %s \", finished\n", s.c_str());
     co_return result;
@@ -174,6 +263,12 @@ clarion::task<> testco2(uint32_t delay_ms)
     printf("loop 1 returned: %s\n", (co_await testco("loop 1", delay_ms)).c_str());
     printf("loop 2 returned: %s\n", (co_await testco("loop 2", delay_ms)).c_str());
     printf("testco2 finished\n");
+}
+
+clarion::task<> testdb()
+{
+    auto db = co_await clarion::open_db("foo");
+    printf("database handle: %p\n", db.handle);
 }
 
 extern "C"
@@ -242,7 +337,8 @@ int main()
     //testco("delay 1s", 1000).start();
     //testco("delay 2s", 2000).start();
     //testco("delay 3s", 3000).start();
-    testco2(200).start();
-    testco2(250).start();
+    // testco2(200).start();
+    // testco2(250).start();
+    testdb().start();
     printf("main returned\n");
 }
