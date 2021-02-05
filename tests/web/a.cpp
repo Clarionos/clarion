@@ -35,14 +35,28 @@ namespace clarion
         void await_resume() {}
     };
 
+    // A task is a coroutine which supports async operations. Once created, a task may be:
+    //  * started exactly once, or
+    //  * co_awaited on by another task exactly once, or
+    //  * be destroyed.
+    //
+    // Starting a task or co_awaiting on a task detaches ownership from the task
+    // object; the running task is automatically destroyed when it's done executing.
     struct task
     {
         struct promise_type
         {
+            coro::coroutine_handle<void> continuation;
+
             promise_type() { printf("promise_type::promise_type\n"); }
             ~promise_type() { printf("promise_type::~promise_type\n"); }
             auto initial_suspend() { return coro::suspend_always(); }
-            auto final_suspend() noexcept { return coro::suspend_never(); }
+            auto final_suspend() noexcept
+            {
+                if (continuation)
+                    continuation.resume();
+                return coro::suspend_never();
+            }
             task get_return_object() { return {this}; }
             void unhandled_exception() { std::abort(); }
             void return_void() {}
@@ -77,6 +91,20 @@ namespace clarion
             coro::coroutine_handle<promise_type>::from_promise(*promise).resume();
             promise = nullptr;
         }
+
+        bool await_ready() { return false; }
+
+        // TODO: should return a coro::coroutine_handle<void> to enable efficient task switching,
+        // but that causes clang to report an error: "WebAssembly 'tail-call' feature not enabled".
+        // This will also require changes to promise_type::final_suspend().
+        void await_suspend(coro::coroutine_handle<void> co)
+        {
+            promise->continuation = co;
+            coro::coroutine_handle<promise_type>::from_promise(*promise).resume();
+            promise = nullptr;
+        }
+
+        void await_resume() {}
     }; // task
 } // namespace clarion
 
@@ -88,6 +116,13 @@ clarion::task testco(const char *s, uint32_t delay_ms)
         co_await clarion::later{delay_ms};
     }
     printf("s = %s, finished\n", s);
+}
+
+clarion::task testco2(uint32_t delay_ms)
+{
+    co_await testco("loop 1", delay_ms);
+    co_await testco("loop 2", delay_ms);
+    printf("testco2 finished\n");
 }
 
 extern "C"
@@ -153,8 +188,10 @@ extern "C"
 int main()
 {
     printf("starting coroutines...\n");
-    testco("delay 1s", 1000).start();
-    testco("delay 2s", 2000).start();
-    testco("delay 3s", 3000).start();
+    //testco("delay 1s", 1000).start();
+    //testco("delay 2s", 2000).start();
+    //testco("delay 3s", 3000).start();
+    testco2(200).start();
+    testco2(250).start();
     printf("main returned\n");
 }
