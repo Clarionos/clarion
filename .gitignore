@@ -6,3 +6,5 @@ CMakeCache.txt
 *.o
 build
 tests/clio/clio_tests
+libraries/appbase/version.cpp
+compile_commands.json
