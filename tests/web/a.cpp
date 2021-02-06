@@ -197,13 +197,20 @@ namespace clarion
         return call_async_awaitable<Ret, extFn, Args, Lambda>{std::move(args), std::move(lambda)};
     }
 
-    [[clang::import_module("clarion"), clang::import_name("callme_later")]] void callme_later(uint32_t delay_ms, void *p, void (*f)(void *));
-    inline auto later(uint32_t delay_ms)
+    namespace imports
     {
-        return call_external_async<void, callme_later>(std::tuple{delay_ms}, [] {});
+        [[clang::import_module("clarion"), clang::import_name("callme_later")]] void callme_later(uint32_t delay_ms, void *p, void (*f)(void *));
     }
 
-    [[clang::import_module("clarion"), clang::import_name("release_object")]] void release_object(void *handle);
+    inline auto later(uint32_t delay_ms)
+    {
+        return call_external_async<void, imports::callme_later>(std::tuple{delay_ms}, [] {});
+    }
+
+    namespace imports
+    {
+        [[clang::import_module("clarion"), clang::import_name("release_object")]] void release_object(void *handle);
+    }
 
     template <typename Tag>
     struct external_object
@@ -218,7 +225,7 @@ namespace clarion
         ~external_object()
         {
             if (handle)
-                release_object(handle);
+                imports::release_object(handle);
         }
 
         external_object &operator=(const external_object &) = delete;
@@ -231,16 +238,61 @@ namespace clarion
     };
 
     struct db_tag;
-    [[clang::import_module("clarion"), clang::import_name("open_db")]] void open_db_raw(const char *name, uint32_t len, void *p, void (*f)(void *p, db_tag *db));
+    struct trx_tag;
+
+    namespace imports
+    {
+        [[clang::import_module("clarion"), clang::import_name("open_db")]] void open_db(const char *name, uint32_t len, void *p, void (*f)(void *p, db_tag *db));
+        [[clang::import_module("clarion"), clang::import_name("create_transaction")]] trx_tag *create_transaction(db_tag *db, bool writable);
+        [[clang::import_module("clarion"), clang::import_name("abort_transaction")]] void abort_transaction(trx_tag *trx);
+        [[clang::import_module("clarion"), clang::import_name("commit_transaction")]] void commit_transaction(trx_tag *trx);
+        [[clang::import_module("clarion"), clang::import_name("set_kv")]] void set_kv(trx_tag *trx, const void *key, uint32_t keyLen, const void *value, uint32_t valueLen, void *p, void (*f)(void *p));
+    } // namespace imports
+
+    struct transaction : external_object<trx_tag>
+    {
+        bool committed = false;
+
+        using external_object<trx_tag>::external_object;
+
+        ~transaction()
+        {
+            if (!committed)
+                abort();
+        }
+
+        void commit()
+        {
+            imports::commit_transaction(handle);
+            committed = true;
+        }
+
+        void abort() { imports::abort_transaction(handle); }
+
+        auto set_kv(const void *key, uint32_t keyLen, const void *value, uint32_t valueLen)
+        {
+            return call_external_async<void, imports::set_kv>(std::tuple{handle, key, keyLen, value, valueLen}, []() {});
+        }
+
+        auto set_kv(std::string_view key, std::string_view value)
+        {
+            return set_kv(key.begin(), key.size(), value.begin(), value.size());
+        }
+    };
 
     struct database : external_object<db_tag>
     {
         using external_object<db_tag>::external_object;
+
+        transaction create_transaction(bool writable)
+        {
+            return {imports::create_transaction(handle, writable)};
+        }
     };
 
     auto open_db(std::string_view name)
     {
-        return call_external_async<database, open_db_raw>(std::tuple{name.begin(), name.size()}, [](db_tag *db) { return db; });
+        return call_external_async<database, imports::open_db>(std::tuple{name.begin(), name.size()}, [](db_tag *db) { return db; });
     }
 
 } // namespace clarion
@@ -269,6 +321,11 @@ clarion::task<> testdb()
 {
     auto db = co_await clarion::open_db("foo");
     printf("database handle: %p\n", db.handle);
+    auto trx = db.create_transaction(true);
+    printf("trx handle: %p\n", trx.handle);
+    co_await trx.set_kv("abcd", "efgh");
+    co_await trx.set_kv("ijkl", "mnop");
+    trx.commit();
 }
 
 extern "C"
