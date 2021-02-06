@@ -12,7 +12,7 @@ set( CMAKE_PROJECT_VERSION_MAJOR    0 )
 set( CMAKE_PROJECT_VERSION_MINOR    0 )
 set( CMAKE_PROJECT_VERSION_PATCH    0 )
 
-find_package(Boost REQUIRED COMPONENTS filesystem program_options date_time chrono iostreams )
+find_package(Boost REQUIRED COMPONENTS filesystem program_options date_time chrono iostreams coroutine)
 find_package(Git)
 
 IF(NOT "$ENV{OPENSSL_ROOT_DIR}" STREQUAL "")
@@ -54,5 +54,6 @@ endif( APPLE )
 
 
 add_subdirectory( libraries )
+add_subdirectory( programs )
 add_subdirectory( tests )
 add_subdirectory( external )
