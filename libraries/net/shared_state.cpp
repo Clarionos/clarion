@@ -7,8 +7,8 @@
 // Official repository: https://github.com/vinniefalco/CppCon2018
 //
 
-#include "shared_state.hpp"
-#include "websocket_session.hpp"
+#include <clarion/net/shared_state.hpp>
+#include <clarion/net/websocket_session.hpp>
 #include <iostream>
 
 shared_state::

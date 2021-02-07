@@ -10,7 +10,7 @@
     <a href="http://www.boost.org/libs/beast">Boost.Beast</a>
     <a href="http://www.boost.org/libs/beast/example/websocket/server/chat-multi">Source Code</a>
   </p>
-  Server URI: <input class="draw-border" id="uri" size="47" value="ws://localhost:9876" style="margin-bottom: 5px;">
+  Server URI: <input class="draw-border" id="uri" size="47" value="ws://localhost:6789" style="margin-bottom: 5px;">
   <button class="echo-button" id="connect">Connect</button>
   <button class="echo-button" id="disconnect">Disconnect</button><br>
   Your Name: <input class="draw-border" id="userName" size=47 style="margin-bottom: 5px;"><br>
@@ -35,7 +35,7 @@
         showMessage("[connection closed]");
       };
       ws.onmessage = function(ev) {
-        showMessage(ev.data);
+        showMessage( ev.data );
       };
       ws.onerror = function(ev) {
         showMessage("[error]");

@@ -7,8 +7,8 @@
 // Official repository: https://github.com/vinniefalco/CppCon2018
 //
 
-#include "http_session.hpp"
-#include "websocket_session.hpp"
+#include <clarion/net/http_session.hpp>
+#include <clarion/net/websocket_session.hpp>
 #include <boost/config.hpp>
 #include <iostream>
 
