@@ -6,6 +6,9 @@ CMakeCache.txt
 *.o
 build
 tests/clio/clio_tests
+<<<<<<< HEAD
+libraries/appbase/version.cpp
+compile_commands.json
 .vscode
 *.wasm
 *.wat
