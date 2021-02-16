@@ -80,10 +80,36 @@
 
             set_kv(trx, key, keyLen, value, valueLen, p, f) {
                 console.log('set_kv', { k: uint8Array(key, keyLen), v: uint8Array(value, valueLen) });
-                const req = objects[trx].kv.put({ k: uint8Array(key, keyLen), v: uint8Array(value, valueLen) });
+                const req = objects[trx].kv.put({ k: new Uint8Array(uint8Array(key, keyLen)), v: new Uint8Array(uint8Array(value, valueLen)) });
                 req.onsuccess = e => callback(f)(p);
                 req.onerror = e => console.error(e);
             },
+
+            create_cursor(trx, p, f) {
+                const req = objects[trx].kv.openCursor();
+                req.onsuccess = e => callback(f)(p, addObj(req));
+                req.onerror = e => console.error(e);
+            },
+
+            // TODO: remove? Maybe create_cursor and cursor_next should indicate this?
+            cursor_has_value(cursor) {
+                return objects[cursor].result ? true : false;
+            },
+
+            cursor_value(cursor) {
+                const c = objects[cursor].result;
+                if (!c)
+                    oops('cursor has no value');
+                return addObj(c.value.v);
+            },
+
+            cursor_next(cursor, p, f) {
+                const req = objects[cursor];
+                if (!req.result)
+                    oops('cursor has no value');
+                req.onsuccess = e => callback(f)(p);
+                req.result.continue();
+            }
         },
     };
 

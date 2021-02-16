@@ -6,6 +6,7 @@
 #include <string>
 #include <tuple>
 
+// TODO: namespace name
 namespace clarion
 {
     namespace coro = std::experimental::coroutines_v1;
@@ -140,6 +141,24 @@ namespace clarion
         void await_resume() {}
     };
 
+    // TODO: name
+    template <typename T>
+    struct trivial_awaitable
+    {
+        T value;
+
+        trivial_awaitable(T value) : value{std::move(value)} {}
+        trivial_awaitable(const trivial_awaitable &) = delete;
+        trivial_awaitable(trivial_awaitable &&) = default;
+
+        trivial_awaitable &operator=(const trivial_awaitable &) = delete;
+        trivial_awaitable &operator=(trivial_awaitable &&) = default;
+
+        bool await_ready() { return true; }
+        void await_suspend(coro::coroutine_handle<void>) {}
+        T await_resume() { return std::move(value); }
+    };
+
     // An awaitable which invokes an external async function, then feeds
     // the result through a lambda
     template <typename Ret, auto extFn, typename Args, typename Lambda>
@@ -239,6 +258,8 @@ namespace clarion
 
     struct db_tag;
     struct trx_tag;
+    struct cursor_tag;
+    struct blob_tag;
 
     namespace imports
     {
@@ -247,7 +268,35 @@ namespace clarion
         [[clang::import_module("clarion"), clang::import_name("abort_transaction")]] void abort_transaction(trx_tag *trx);
         [[clang::import_module("clarion"), clang::import_name("commit_transaction")]] void commit_transaction(trx_tag *trx);
         [[clang::import_module("clarion"), clang::import_name("set_kv")]] void set_kv(trx_tag *trx, const void *key, uint32_t keyLen, const void *value, uint32_t valueLen, void *p, void (*f)(void *p));
+        [[clang::import_module("clarion"), clang::import_name("create_cursor")]] void create_cursor(trx_tag *trx, void *p, void (*f)(void *p, cursor_tag *cursor));
+        [[clang::import_module("clarion"), clang::import_name("cursor_has_value")]] bool cursor_has_value(cursor_tag *cursor);
+        [[clang::import_module("clarion"), clang::import_name("cursor_value")]] blob_tag *cursor_value(cursor_tag *cursor);
+        [[clang::import_module("clarion"), clang::import_name("cursor_next")]] void cursor_next(cursor_tag *cursor, void *p, void (*f)(void *p));
     } // namespace imports
+
+    struct kv_range : external_object<cursor_tag>
+    {
+        using external_object<cursor_tag>::external_object;
+
+        struct end_iterator
+        {
+        };
+
+        struct iterator
+        {
+            kv_range &kv_range;
+
+            bool operator!=(const end_iterator &) { return imports::cursor_has_value(kv_range.handle); }
+            auto operator++()
+            {
+                return call_external_async<void, imports::cursor_next>(std::tuple{kv_range.handle}, [] {});
+            }
+            external_object<blob_tag> operator*() { return imports::cursor_value(kv_range.handle); }
+        };
+
+        trivial_awaitable<iterator> begin() { return iterator{*this}; }
+        end_iterator end() { return {}; }
+    };
 
     struct transaction : external_object<trx_tag>
     {
@@ -278,7 +327,12 @@ namespace clarion
         {
             return set_kv(key.begin(), key.size(), value.begin(), value.size());
         }
-    };
+
+        auto everything()
+        {
+            return call_external_async<kv_range, imports::create_cursor>(std::tuple{handle}, [](cursor_tag *cursor) { return cursor; });
+        }
+    }; // transaction
 
     struct database : external_object<db_tag>
     {
@@ -325,6 +379,10 @@ clarion::task<> testdb()
     printf("trx handle: %p\n", trx.handle);
     co_await trx.set_kv("abcd", "efgh");
     co_await trx.set_kv("ijkl", "mnop");
+
+    for co_await(auto x: co_await trx.everything())
+        printf("... blob handle %p\n", x.handle);
+
     trx.commit();
 }
 
@@ -377,14 +435,14 @@ extern "C"
         __wasi_filesize_t *newoffset) __attribute__((__import_module__("wasi_snapshot_preview1"),
                                                      __import_name__("fd_seek")))
     {
-        clarion::fatal("__wasi_fd_seek fatal");
+        clarion::fatal("__wasi_fd_seek not implemented");
     }
 
     __wasi_errno_t __wasi_fd_close(
         __wasi_fd_t fd) __attribute__((__import_module__("wasi_snapshot_preview1"),
                                        __import_name__("fd_close")))
     {
-        clarion::fatal("__wasi_fd_close fatal");
+        clarion::fatal("__wasi_fd_close not implemented");
     }
 } // extern "C"
 
