@@ -33,8 +33,9 @@ void fail(beast::error_code ec, char const* what)
     std::cerr << what << ": " << ec.message() << "\n";
 }
 
+
 void websocket_session::connect( const std::string& host, const std::string& port ) {
-    boost::asio::spawn( ws_.get_executor(), [=]( boost::asio::yield_context yield ) {
+    boost::asio::spawn( ws_.get_executor(), [this,self=shared_from_this(),host,port]( boost::asio::yield_context yield ) {
         beast::error_code ec;
         tcp::resolver resolver(ws_.get_executor());
 
@@ -122,9 +123,7 @@ websocket_session:: ~websocket_session()
     state_->leave(this);
 }
 
-void
-websocket_session::
-fail(beast::error_code ec, char const* what)
+void websocket_session::fail(beast::error_code ec, char const* what)
 {
     // Don't report these
     if( ec == net::error::operation_aborted ||
@@ -153,9 +152,7 @@ void websocket_session::on_accept(beast::error_code ec)
     // Send a DH public key
 }
 
-void
-websocket_session::
-on_read(beast::error_code ec, std::size_t)
+void websocket_session::on_read(beast::error_code ec, std::size_t)
 {
     // Handle the error, if any
     if(ec)
@@ -176,9 +173,7 @@ on_read(beast::error_code ec, std::size_t)
             shared_from_this()));
 }
 
-void
-websocket_session::
-send(std::shared_ptr<std::string const> const& ss)
+void websocket_session::send(std::shared_ptr<std::string const> const& ss)
 {
     // Post our work to the strand, this ensures
     // that the members of `this` will not be
@@ -192,9 +187,7 @@ send(std::shared_ptr<std::string const> const& ss)
             ss));
 }
 
-void
-websocket_session::
-on_send(std::shared_ptr<std::string const> const& ss)
+void websocket_session::on_send(std::shared_ptr<std::string const> const& ss)
 {
     // Always add to queue
     queue_.push_back(ss);
@@ -211,9 +204,7 @@ on_send(std::shared_ptr<std::string const> const& ss)
             shared_from_this()));
 }
 
-void
-websocket_session::
-on_write(beast::error_code ec, std::size_t)
+void websocket_session::on_write(beast::error_code ec, std::size_t)
 {
     // Handle the error, if any
     if(ec)

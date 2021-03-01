@@ -47,8 +47,7 @@ public:
     ~websocket_session();
 
     template<class Body, class Allocator>
-    void
-    run(http::request<Body, http::basic_fields<Allocator>> req);
+    void run(http::request<Body, http::basic_fields<Allocator>> req);
 
     // Send a message
     void send(std::shared_ptr<std::string const> const& ss);

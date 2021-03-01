@@ -24,9 +24,10 @@ class net_plugin : public appbase::plugin<net_plugin>
      void plugin_shutdown();
 
      private:
-        asio::ip::address _ip;
-        uint16_t          _port = 8090;
-        string            _docroot;
+        asio::ip::address      _ip;
+        uint16_t               _port = 8090;
+        string                 _docroot;
+        std::vector<string>    _remote_endpoints; /// ip:port to maintain connections with
 
 };
 

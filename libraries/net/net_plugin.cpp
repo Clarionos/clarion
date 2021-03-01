@@ -1,4 +1,5 @@
 #include <clarion/net/net_plugin.hpp>
+#include <clarion/net/websocket_session.hpp>
 #include <clarion/net/listener.hpp>
 #include <clarion/net/shared_state.hpp>
 
@@ -19,7 +20,7 @@ namespace cl { namespace net {
         cfg.add_options()
               ("http-listen-endpoint", bpo::value<string>()->default_value( "127.0.0.1:6789" ), "The local IP address and port to listen for incoming connections.")
               ("document-root", bpo::value<string>()->default_value( "." ), "Root directory of web server")
-     //         ("remote-endpoint", bpo::value< vector<string> >()->composing(), "The IP address and port of a remote peer to sync with.")
+              ("remote-endpoint", bpo::value< vector<string> >()->composing(), "The IP address and port of a remote peer to sync with.")
      //         ("public-endpoint", bpo::value<string>()->default_value( "0.0.0.0:9876" ), "The public IP address and port that should be advertized to peers.")
               ;
      }
@@ -27,6 +28,10 @@ namespace cl { namespace net {
 
      void net_plugin::plugin_initialize( const variables_map& options ) { 
          std::cout << "initialize net plugin\n"; 
+         if( options.count("remote-endpoint") ) {
+             _remote_endpoints = options.at("remote-endpoint").as<std::vector<string>>();
+         }
+
          auto ep = options.at("http-listen-endpoint").as<string>();
          auto ip = ep.substr( 0, ep.find( ':' ));
 
@@ -40,11 +45,18 @@ namespace cl { namespace net {
 
          auto ss = std::make_shared<shared_state>(_docroot);
          
+         std::cout << "listening on " << _ip << ":" << _port<<"\n";
          std::make_shared<listener>(
              appbase::app().get_io_service(),
              tcp::endpoint{_ip, _port},
              ss )->run();
              
+         for( const auto& rep : _remote_endpoints ) {
+            auto sock  = std::make_shared<websocket_session>( appbase::app().get_io_service(), ss );
+            auto ip    = rep.substr( 0, rep.find( ':' ));
+            auto port  = rep.substr( ip.size() + 1, rep.size());
+            sock->connect( ip, port );
+         }
      }
      void net_plugin::plugin_shutdown()  { 
          std::cout << "shutdown net plugin \n"; 

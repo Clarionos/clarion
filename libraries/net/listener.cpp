@@ -60,9 +60,7 @@ listener(
     }
 }
 
-void
-listener::
-run()
+void listener::run()
 {
     // The new connection gets its own strand
     acceptor_.async_accept(
@@ -73,9 +71,7 @@ run()
 }
 
 // Report a failure
-void
-listener::
-fail(beast::error_code ec, char const* what)
+void listener::fail(beast::error_code ec, char const* what)
 {
     // Don't report on canceled operations
     if(ec == net::error::operation_aborted)
@@ -84,10 +80,9 @@ fail(beast::error_code ec, char const* what)
 }
 
 // Handle a connection
-void
-listener::
-on_accept(beast::error_code ec, tcp::socket socket)
+void listener::on_accept(beast::error_code ec, tcp::socket socket)
 {
+    std::cout << "on_accept...\n";
     if(ec)
         return fail(ec, "accept");
     else
