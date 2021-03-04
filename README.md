@@ -6,7 +6,7 @@ mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j
-./tests/clio/clio_tests
+native/tests/clio/clio_tests
 ```
 
 ## Ubuntu 20.04

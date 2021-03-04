@@ -1,1 +1,1 @@
-add_subdirectory( clariond )
+add_subdirectory( clarionc )
