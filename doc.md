@@ -15,6 +15,7 @@ Design:
         
         struct user {
             key,
+            account_name, // assigned by the owner of the node/inviter
             bytes broadcast
         }
 
@@ -27,6 +28,7 @@ Design:
                 signature
             }
             key owner
+            display_name, // defined by the identity
             vector<meta_data> metadata
         }
 
@@ -68,6 +70,7 @@ On a new connection, the peer must authenticate itself and the peer it is connec
 
 user, browser, server are all names for public keys that make this documentation easier to follow
 
+```
 $user@$browser ----  connects via websock --->  /ipv4/ws/port/$server
 
 browser to server
@@ -92,14 +95,7 @@ browser to server
      login_response {
         auth: $browser.sign( dh.get_shared_secret( $browser_connection_session_privkey, $server_connection_session_pubkey ) )
      }
-
-
-browser to server 
-    add_user {
-        pubkey
-        signed server
-    }
-
+```
 
 ## What does it mean to be a user of a server?
 
@@ -125,6 +121,16 @@ Each user has the permission to create N other users... where N is assigned at t
 This makes "accounts" a "currency" on a particular server.
 
 A user can "replace their account" with a new key, in this way an invite is just giving someone a private key to a temporary account which then "upgrades" to a real account
+
+```
+browser to server 
+add_user {
+   pubkey
+   signed server
+}
+```
+
+
 
 ## How do users get removed?
 
