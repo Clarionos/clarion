@@ -1,1 +1,3 @@
-add_subdirectory( clarionc )
+if(DEFINED IS_NATIVE)
+    add_subdirectory(clarionc)
+endif()
