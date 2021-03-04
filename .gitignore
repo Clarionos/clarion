@@ -12,3 +12,5 @@ compile_commands.json
 .vscode
 *.wasm
 *.wat
+node_modules
+.DS_Store
