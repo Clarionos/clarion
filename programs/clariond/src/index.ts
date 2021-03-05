@@ -1,10 +1,13 @@
 import * as Level from "level";
 
-import { DATABASE } from "./config";
+import { initClarion } from "clwasmer";
+import { DATABASE, CLARION_WASM_PATH } from "./config";
+import { readFileSync } from "fs";
 
-const main = () => {
+const main = async () => {
   console.info(">>> Initializing Clarion...");
-  initDb();
+  const db = await initDb();
+  await loadClarion(db);
 };
 
 const initDb = async () => {
@@ -25,6 +28,13 @@ const initDb = async () => {
   } catch (error) {
     console.error("!!! Fail to initialize DB: ", error);
   }
+
+  return db;
+};
+
+const loadClarion = async (db: any) => {
+  const clarionWasm = readFileSync(CLARION_WASM_PATH);
+  initClarion(clarionWasm, db);
 };
 
 main();
