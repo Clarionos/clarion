@@ -6,13 +6,15 @@ if(NOT DEFINED WASI_SDK_PREFIX AND DEFINED ENV{WASI_SDK_PREFIX})
     set(WASI_SDK_PREFIX $ENV{WASI_SDK_PREFIX})
 endif()
 
-ExternalProject_Add(native
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/native
-    BINARY_DIR native
-    INSTALL_COMMAND ""
-    CMAKE_ARGS
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-)
+if(NOT DEFINED SKIP_NATIVE)
+    ExternalProject_Add(native
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/native
+        BINARY_DIR native
+        INSTALL_COMMAND ""
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    )
+endif()
 
 if(DEFINED WASI_SDK_PREFIX)
     ExternalProject_Add(wasm
