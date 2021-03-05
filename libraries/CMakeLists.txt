@@ -5,4 +5,8 @@ if(DEFINED IS_NATIVE)
     add_subdirectory(clcrypto)
 endif()
 
+if(DEFINED IS_WASM)
+    add_subdirectory(clintrinsics)
+endif()
+
 add_subdirectory(clio)

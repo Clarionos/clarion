@@ -1,3 +1,2 @@
 add_executable(a.wasm a.cpp)
-
-target_link_options(a.wasm PUBLIC -Wl,--export-table)
+target_link_libraries(a.wasm clintrinsics)

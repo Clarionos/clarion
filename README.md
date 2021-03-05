@@ -29,7 +29,3 @@ cd ~/work
 wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-12/wasi-sdk-12.0-linux.tar.gz
 tar xf wasi-sdk-12.0-linux.tar.gz
 ```
-
-## Browser experiments
-
-See [tests/web/README.md](tests/web/README.md)
