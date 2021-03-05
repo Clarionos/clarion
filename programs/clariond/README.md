@@ -1,3 +1,6 @@
 # ClarionOS NodeJS Host
 
-wip...
+```sh
+yarn
+yarn dev
+```
