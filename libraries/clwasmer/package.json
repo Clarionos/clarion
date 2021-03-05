@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {
-    "node": "12"
+    "node": "14"
   },
   "scripts": {
     "lint": "eslint --ext .js,.ts .",
