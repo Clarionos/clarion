@@ -20,3 +20,6 @@ RUN cd /opt \
     && tar xf node-v14.16.0-linux-x64.tar.xz \
     && export PATH="/opt/node-v14.16.0-linux-x64/bin:$PATH" \
     && npm i -g yarn
+
+ENV WASI_SDK_PREFIX=/opt/wasi-sdk-12.0
+ENV PATH=/opt/node-v14.16.0-linux-x64/bin:$PATH

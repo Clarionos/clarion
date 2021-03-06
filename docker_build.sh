@@ -7,12 +7,10 @@ docker run \
     --workdir /workspace \
     clarion-builder:latest bash -c "
         set -e
-        export WASI_SDK_PREFIX=/opt/wasi-sdk-12.0
-        export PATH=\"/opt/node-v14.16.0-linux-x64/bin:$PATH\"
-        mkdir -p build
-        cd build
+        mkdir -p build-docker
+        cd build-docker
         cmake -DCMAKE_BUILD_TYPE=Release ..
-        # make -j
-        make
+        make -j
         native/tests/clio/clio_tests
+        NODE_PATH=dist CLARION_WASM_PATH=wasm/tests/web/a.wasm node dist/clariond/index.js
 "
