@@ -8,7 +8,9 @@ mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j
+
 native/tests/clio/clio_tests
+NODE_PATH=dist CLARION_WASM_PATH=wasm/tests/web/a.wasm node dist/clariond/index.js
 ```
 
 ## Ubuntu 20.04

@@ -30,3 +30,7 @@ if(DEFINED WASI_SDK_PREFIX)
 else()
     message(WARNING "WASI_SDK_PREFIX isn't defined; skipping wasm")
 endif()
+
+if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
+    add_subdirectory(ts)
+endif()
