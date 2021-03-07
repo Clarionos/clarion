@@ -3,5 +3,6 @@ if(DEFINED IS_NATIVE)
 endif()
 
 if(DEFINED IS_WASM)
+    add_subdirectory(clintrinsics)
     add_subdirectory(web)
 endif()

@@ -13,6 +13,8 @@ add_custom_target(dist ALL
     COMMAND npx tsc
     COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/clwasmer
     COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/clariond
+    COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/clintrinsics
     COMMAND cp -a compiled/libraries/clwasmer/src/* ${CMAKE_BINARY_DIR}/dist/clwasmer
     COMMAND cp -a compiled/programs/clariond/src/* ${CMAKE_BINARY_DIR}/dist/clariond
+    COMMAND cp -a compiled/tests/clintrinsics/* ${CMAKE_BINARY_DIR}/dist/clintrinsics
 )

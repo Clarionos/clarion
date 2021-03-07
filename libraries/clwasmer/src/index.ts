@@ -3,6 +3,8 @@ export class Context {
     instance?: WebAssembly.Instance;
     module?: WebAssembly.Module;
     objects: any[] = [null];
+    args = ["some-wasm"];
+    encodedArgs?: Uint8Array[];
     db: any = null; // todo: create a clariondb wrapper
 
     oops(s: any) {
@@ -13,6 +15,11 @@ export class Context {
     uint8Array(pos: number, len: number) {
         const memory = this.instance!.exports.memory as WebAssembly.Memory;
         return new Uint8Array(memory.buffer, pos, len);
+    }
+
+    uint32Array(pos: number, len: number) {
+        const memory = this.instance!.exports.memory as WebAssembly.Memory;
+        return new Uint32Array(memory.buffer, pos, len);
     }
 
     decodeStr(pos: number, len: number) {
@@ -43,6 +50,36 @@ export class Context {
                     const l = s.split("\n");
                     for (let i = 0; i < l.length - 1; ++i) console.log(l[i]);
                     context.consoleBuf = l[l.length - 1];
+                },
+
+                get_arg_counts(argc: number, argv_buf_size: number) {
+                    if (!context.encodedArgs) {
+                        const encoder = new TextEncoder();
+                        context.encodedArgs = context.args.map((s) =>
+                            encoder.encode(s)
+                        );
+                    }
+                    let size = 0;
+                    for (const a of context.encodedArgs) size += a.length + 1;
+                    context.uint32Array(argc, 1)[0] =
+                        context.encodedArgs.length;
+                    context.uint32Array(argv_buf_size, 1)[0] = size;
+                },
+
+                get_args(argv: number, argv_buf: number) {
+                    const memory = context.instance!.exports
+                        .memory as WebAssembly.Memory;
+                    const u8 = new Uint8Array(memory.buffer);
+                    const u32 = context.uint32Array(
+                        argv,
+                        context.encodedArgs!.length
+                    );
+                    argv = 0;
+                    for (const a of context.encodedArgs!) {
+                        u32[argv++] = argv_buf;
+                        for (const ch of a) u8[argv_buf++] = ch;
+                        u8[argv_buf++] = 0;
+                    }
                 },
 
                 callme_later(delay_ms: number, param: any, fnIndex: number) {

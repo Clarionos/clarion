@@ -18,7 +18,8 @@
     "compileOnSave": true,
     "include": [
         "${CMAKE_SOURCE_DIR}/libraries/clwasmer",
-        "${CMAKE_SOURCE_DIR}/programs/clariond"
+        "${CMAKE_SOURCE_DIR}/programs/clariond",
+        "${CMAKE_SOURCE_DIR}/tests/clintrinsics"
     ],
     "exclude": []
 }
