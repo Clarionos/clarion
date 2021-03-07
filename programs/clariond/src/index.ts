@@ -1,6 +1,6 @@
 import * as Level from "level";
 
-import { initClarion } from "clwasmer";
+import { Context } from "clwasmer";
 import { DATABASE, CLARION_WASM_PATH } from "./config";
 import { readFileSync } from "fs";
 
@@ -34,7 +34,10 @@ const initDb = async () => {
 
 const loadClarion = async (db: any) => {
   const clarionWasm = readFileSync(CLARION_WASM_PATH);
-  initClarion(clarionWasm, db);
+  const context = new Context;
+  context.db = db;
+  await context.instanciate(clarionWasm);
+  (context.instance!.exports as any)._start();
 };
 
 main();
