@@ -2,12 +2,21 @@ let consoleBuf = "";
 let instance: WebAssembly.Instance;
 let objects: any[] = [null];
 
+export interface ClarionDbTrx {
+  commit: () => void;
+  abort: () => void;
+  put: (key: Uint8Array, value: Uint8Array) => void;
+  delete: (key: Uint8Array) => void;
+  get: (key: Uint8Array) => Uint8Array;
+  createCursor: () => any;
+}
 export interface ClarionDbAdapter {
-  open: (name: string, callback: (error: Error, db: any) => void) => void;
-  batch: () => any; // todo: define batch object
+  open: (name: string, callback: (error?: Error, db?: any) => void) => void;
+  close: (db: any) => void;
+  createTransaction: (db: any, writable?: boolean) => ClarionDbTrx;
 }
 
-let db: ClarionDbAdapter;
+let dbAdapter: ClarionDbAdapter;
 
 const throwError = (message: string) => {
   console.error(">>> Error:", message);
@@ -27,6 +36,10 @@ const decodeStr = (pos: number, len: number) => {
 const addObj = (obj: any) => {
   objects.push(obj);
   return objects.length - 1;
+};
+
+const getObj = <T>(index: number): T => {
+  return objects[index] as T;
 };
 
 const wasmCallback = (fnIndex: number, ...params: any[]): Function => {
@@ -64,29 +77,28 @@ const clarion = {
   open_db(pos: number, len: number, wasmCbPtr: any, wasmCbIndex: number) {
     const dbName = decodeStr(pos, len);
 
-    db.open(dbName, (error, openedDb) => {
+    dbAdapter.open(dbName, (error, db) => {
       if (error) throw error;
-      wasmCallback(wasmCbIndex, wasmCbPtr, addObj(openedDb));
+      wasmCallback(wasmCbIndex, wasmCbPtr, addObj(db));
     });
   },
 
   // TODO: automatically abort transactions which aren't committed?
   // TODO: give this an async interface?
-  // todo: remove writable?
   create_transaction(dbIndex: number, writable: boolean) {
     const db = objects[dbIndex] as ClarionDbAdapter;
-    const batch = db.batch();
-    return addObj({ batch });
+    const trx = dbAdapter.createTransaction(db, writable);
+    return addObj(trx);
   },
 
   // TODO: give this an async interface?
   abort_transaction(trxIndex: number) {
-    objects[trxIndex].batch.clear();
+    getObj<ClarionDbTrx>(trxIndex).abort();
   },
 
   // TODO: give this an async interface?
   commit_transaction(trxIndex: number) {
-    objects[trxIndex].batch.write(() => console.info("batch written!"));
+    getObj<ClarionDbTrx>(trxIndex).commit();
   },
 
   set_kv(
@@ -98,14 +110,12 @@ const clarion = {
     wasmCbPtr: any,
     wasmCbIndex: number
   ) {
-    console.log("set_kv", {
-      k: uint8Array(key, keyLen),
-      v: uint8Array(value, valueLen),
-    });
-    objects[trxIndex].batch.put(
-      new Uint8Array(uint8Array(key, keyLen)),
-      new Uint8Array(uint8Array(value, valueLen))
-    );
+    const data = {
+      key: new Uint8Array(uint8Array(key, keyLen)),
+      value: new Uint8Array(uint8Array(value, valueLen)),
+    };
+    console.log("set_kv", data);
+    getObj<ClarionDbTrx>(trxIndex).put(data.key, data.value);
     wasmCallback(wasmCbIndex, wasmCbPtr);
   },
 
@@ -144,7 +154,7 @@ export const initClarion = async (
   wasmBytes: BufferSource,
   database: any
 ): Promise<ClarionWasm> => {
-  db = database;
+  dbAdapter = database;
   const module = await WebAssembly.compile(wasmBytes);
   instance = await WebAssembly.instantiate(module, { clarion });
   return { module, instance };

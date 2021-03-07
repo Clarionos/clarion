@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "clwasmer": "file:../../libraries/clwasmer",
-    "level": "^6.0.1"
+    "level": "^6.0.1",
+    "node-lmdb": "^0.9.4"
   }
 }
