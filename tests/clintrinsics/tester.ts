@@ -1,8 +1,8 @@
 import { Context } from "clwasmer";
 import { readFileSync } from "fs";
 
-const loadClarion = async (path: string) => {
-    const context = new Context([path, "-h"]);
+const runWasm = async (path: string, args: string[]) => {
+    const context = new Context(args);
     try {
         const wasm = readFileSync(path);
         await context.instanciate(wasm);
@@ -13,4 +13,10 @@ const loadClarion = async (path: string) => {
     }
 };
 
-loadClarion("wasm/tests/clintrinsics/test-clintrinsics.wasm");
+if (process.argv.length < 3) {
+    console.error(
+        `Usage: ${process.argv[0]} ${process.argv[1]} wasm_path wasm_args...`
+    );
+} else {
+    runWasm(process.argv[2], process.argv.slice(2));
+}
