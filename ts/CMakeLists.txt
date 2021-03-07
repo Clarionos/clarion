@@ -14,11 +14,6 @@ add_custom_target(yarn
     COMMAND yarn
 )
 
-add_custom_target(pwa ALL
-    DEPENDS yarn
-    COMMAND npx webpack --config pwa.webpack.config.js
-)
-
 add_custom_target(dist ALL
     DEPENDS yarn
     COMMAND npx webpack --config pwa.webpack.config.js
@@ -29,4 +24,14 @@ add_custom_target(dist ALL
     COMMAND cp -a compiled/libraries/clwasmer/src/* ${CMAKE_BINARY_DIR}/dist/clwasmer
     COMMAND cp -a compiled/programs/clariond/src/* ${CMAKE_BINARY_DIR}/dist/clariond
     COMMAND cp -a compiled/tests/clintrinsics/* ${CMAKE_BINARY_DIR}/dist/clintrinsics
+)
+
+add_custom_target(pwa ALL
+    DEPENDS yarn wasm
+    COMMAND npx webpack --config pwa.webpack.config.js
+)
+
+add_custom_target(pwa-dev
+    DEPENDS yarn wasm
+    COMMAND npx webpack serve --config pwa.webpack.config.js --open
 )

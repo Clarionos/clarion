@@ -28,6 +28,7 @@ module.exports = {
         new CopyPlugin({
             patterns: [
                 { from: "src/programs/clarionpwa/index.html", to: dist },
+                { from: "../wasm/tests/web/a.wasm", to: dist + '/clarion.wasm' },
             ],
         }),
     ],
