@@ -1,19 +1,24 @@
 {
-  "compilerOptions": {
-    "baseUrl": "${CMAKE_SOURCE_DIR}/libraries",
-    "module": "CommonJS",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "outDir": "compiled",
-    "sourceMap": true,
-    "strict": true,
-    "target": "es2017",
-    "declaration": true
-  },
-  "compileOnSave": true,
-  "include": [
-    "${CMAKE_SOURCE_DIR}/libraries/clwasmer",
-    "${CMAKE_SOURCE_DIR}/programs/clariond"
-  ],
-  "exclude": []
+    "compilerOptions": {
+        "baseUrl": "${CMAKE_SOURCE_DIR}",
+        "paths": {
+            "clwasmer": [
+                "libraries/clwasmer/src"
+            ]
+        },
+        "module": "CommonJS",
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "outDir": "compiled",
+        "sourceMap": true,
+        "strict": true,
+        "target": "es2017",
+        "declaration": true
+    },
+    "compileOnSave": true,
+    "include": [
+        "${CMAKE_SOURCE_DIR}/libraries/clwasmer",
+        "${CMAKE_SOURCE_DIR}/programs/clariond"
+    ],
+    "exclude": []
 }
