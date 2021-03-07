@@ -15,9 +15,13 @@
     "@wasmer/wasi": "^0.12.0",
     "@wasmer/wasm-transformer": "^0.12.0",
     "@wasmer/wasmfs": "^0.12.0",
-    "clwasmer": "file:../../libraries/clwasmer"
+    "clwasmer": "file:../../libraries/clwasmer",
+    "level": "^6.0.1"
   },
   "browserslist": [
     "last 1 Chrome version"
-  ]
+  ],
+  "staticFiles": {
+    "watcherGlob": "**"
+  }
 }

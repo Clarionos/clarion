@@ -1,11 +1,17 @@
 let consoleBuf = "";
 let instance: WebAssembly.Instance;
 let objects: any[] = [null];
-let db: any; // todo: create a clariondb wrapper
 
-const oops = (s: any) => {
-  console.error("oops: ", s);
-  throw new Error(s);
+export interface ClarionDbAdapter {
+  open: (name: string, callback: (error: Error, db: any) => void) => void;
+  batch: () => any; // todo: define batch object
+}
+
+let db: ClarionDbAdapter;
+
+const throwError = (message: string) => {
+  console.error(">>> Error:", message);
+  throw new Error(message);
 };
 
 const uint8Array = (pos: number, len: number) => {
@@ -14,7 +20,8 @@ const uint8Array = (pos: number, len: number) => {
 };
 
 const decodeStr = (pos: number, len: number) => {
-  return new TextDecoder().decode(uint8Array(pos, len));
+  const data = uint8Array(pos, len);
+  return new TextDecoder().decode(data);
 };
 
 const addObj = (obj: any) => {
@@ -22,19 +29,19 @@ const addObj = (obj: any) => {
   return objects.length - 1;
 };
 
-const wasmCallback = (fnIndex: number, ...params: any): Function => {
+const wasmCallback = (fnIndex: number, ...params: any[]): Function => {
   const fnTable = instance.exports
     .__indirect_function_table as WebAssembly.Table;
   const fn = fnTable.get(fnIndex);
   if (!fn) {
-    throw new Error("Invalid function!"); // todo: can we throw?
+    return throwError("Invalid WASM table function");
   }
   return fn(...params);
 };
 
 const clarion = {
   exit(code: number) {
-    oops("exit: " + code);
+    throwError("exit: " + code);
   },
 
   console(pos: number, len: number) {
@@ -44,8 +51,8 @@ const clarion = {
     consoleBuf = l[l.length - 1];
   },
 
-  callme_later(delay_ms: number, param: any, fnIndex: number) {
-    setTimeout(() => wasmCallback(fnIndex, param), delay_ms);
+  callme_later(delayMs: number, wasmCbPtr: any, wasmCbIndex: number) {
+    setTimeout(() => wasmCallback(wasmCbIndex, wasmCbPtr), delayMs);
   },
 
   release_object(index: number) {
@@ -54,41 +61,32 @@ const clarion = {
   },
 
   // TODO: context argument
-  open_db(pos: number, len: number, param: any, fnIndex: number) {
+  open_db(pos: number, len: number, wasmCbPtr: any, wasmCbIndex: number) {
     const dbName = decodeStr(pos, len);
 
-    const req = db.open(dbName, 1);
-
-    req.onupgradeneeded = (_e: any) =>
-      req.result.createObjectStore("kv", { keyPath: "k" });
-    req.onsuccess = (_e: any) =>
-      wasmCallback(fnIndex, param, addObj(req.result));
-
-    req.onupgradeneeded = (_e: any) =>
-      req.result.createObjectStore("kv", { keyPath: "k" });
-    req.onsuccess = (_e: any) =>
-      wasmCallback(fnIndex, param, addObj(req.result));
+    db.open(dbName, (error, openedDb) => {
+      if (error) throw error;
+      wasmCallback(wasmCbIndex, wasmCbPtr, addObj(openedDb));
+    });
   },
 
   // TODO: automatically abort transactions which aren't committed?
   // TODO: give this an async interface?
+  // todo: remove writable?
   create_transaction(dbIndex: number, writable: boolean) {
-    const trx = objects[dbIndex].transaction(
-      "kv",
-      writable ? "readwrite" : "readonly"
-    );
-    const kv = trx.objectStore("kv");
-    return addObj({ trx, kv });
+    const db = objects[dbIndex] as ClarionDbAdapter;
+    const batch = db.batch();
+    return addObj({ batch });
   },
 
   // TODO: give this an async interface?
   abort_transaction(trxIndex: number) {
-    objects[trxIndex].trx.abort();
+    objects[trxIndex].batch.clear();
   },
 
   // TODO: give this an async interface?
   commit_transaction(trxIndex: number) {
-    objects[trxIndex].trx.commit();
+    objects[trxIndex].batch.write(() => console.info("batch written!"));
   },
 
   set_kv(
@@ -97,24 +95,24 @@ const clarion = {
     keyLen: number,
     value: number,
     valueLen: number,
-    params: any,
-    fnIndex: number
+    wasmCbPtr: any,
+    wasmCbIndex: number
   ) {
     console.log("set_kv", {
       k: uint8Array(key, keyLen),
       v: uint8Array(value, valueLen),
     });
-    const req = objects[trxIndex].kv.put({
-      k: new Uint8Array(uint8Array(key, keyLen)),
-      v: new Uint8Array(uint8Array(value, valueLen)),
-    });
-    req.onsuccess = (_e: any) => wasmCallback(fnIndex, params);
-    req.onerror = (e: any) => console.error(e);
+    objects[trxIndex].batch.put(
+      new Uint8Array(uint8Array(key, keyLen)),
+      new Uint8Array(uint8Array(value, valueLen))
+    );
+    wasmCallback(wasmCbIndex, wasmCbPtr);
   },
 
-  create_cursor(trxIndex: number, params: any, fnIndex: number) {
+  create_cursor(trxIndex: number, wasmCbPtr: any, wasmCbIndex: number) {
     const req = objects[trxIndex].kv.openCursor();
-    req.onsuccess = (_e: any) => wasmCallback(fnIndex, params, addObj(req));
+    req.onsuccess = (_e: any) =>
+      wasmCallback(wasmCbIndex, wasmCbPtr, addObj(req));
     req.onerror = (e: any) => console.error(e);
   },
 
@@ -125,14 +123,14 @@ const clarion = {
 
   cursor_value(cursorIndex: number) {
     const c = objects[cursorIndex].result;
-    if (!c) oops("cursor has no value");
+    if (!c) throwError("cursor has no value");
     return addObj(c.value.v);
   },
 
-  cursor_next(cursorIndex: number, params: any, fnIndex: number) {
+  cursor_next(cursorIndex: number, wasmCbPtr: any, wasmCbIndex: number) {
     const req = objects[cursorIndex];
-    if (!req.result) oops("cursor has no value");
-    req.onsuccess = (_e: any) => wasmCallback(fnIndex, params);
+    if (!req.result) throwError("cursor has no value");
+    req.onsuccess = (_e: any) => wasmCallback(wasmCbIndex, wasmCbPtr);
     req.result.continue();
   },
 };
