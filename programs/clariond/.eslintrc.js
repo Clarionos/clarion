@@ -21,6 +21,6 @@ module.exports = {
   rules: {
     quotes: ["error", "double"],
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
   },
 };

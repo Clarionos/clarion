@@ -1,15 +1,34 @@
+export interface ClarionDbTrx {
+    commit: () => void;
+    abort: () => void;
+    put: (key: Uint8Array, value: Uint8Array) => void;
+    delete: (key: Uint8Array) => void;
+    get: (key: Uint8Array) => Uint8Array;
+    createCursor: () => any;
+}
+export interface ClarionDbAdapter {
+    open: (name: string, callback: (error?: Error, db?: any) => void) => void;
+    close: (db: any) => void;
+    createTransaction: (db: any, writable?: boolean) => ClarionDbTrx;
+}
+
 export class Context {
     consoleBuf = "";
     instance?: WebAssembly.Instance;
     module?: WebAssembly.Module;
     objects: any[] = [null];
-    args = ["some-wasm"];
+    args: string[];
     encodedArgs?: Uint8Array[];
-    db: any = null; // todo: create a clariondb wrapper
+    dbAdapter?: ClarionDbAdapter;
 
-    oops(s: any) {
-        console.error("oops: ", s);
-        throw new Error(s);
+    constructor(args: string[], dbAdapter?: ClarionDbAdapter) {
+        this.args = args;
+        this.dbAdapter = dbAdapter;
+    }
+
+    throwError(message: string) {
+        console.error(">>> Error: ", message);
+        throw new Error(message);
     }
 
     uint8Array(pos: number, len: number) {
@@ -31,6 +50,10 @@ export class Context {
         return this.objects.length - 1;
     }
 
+    getObj<T>(index: number) {
+        return this.objects[index] as T;
+    }
+
     wasmCallback(fnIndex: number, ...params: any): any {
         const fnTable = this.instance!.exports
             .__indirect_function_table as WebAssembly.Table;
@@ -42,7 +65,7 @@ export class Context {
         return {
             clarion: {
                 exit(code: number) {
-                    context.oops("exit: " + code);
+                    context.throwError("exit: " + code);
                 },
 
                 console(pos: number, len: number) {
@@ -82,10 +105,14 @@ export class Context {
                     }
                 },
 
-                callme_later(delay_ms: number, param: any, fnIndex: number) {
+                callme_later(
+                    delayMs: number,
+                    wasmCbPtr: any,
+                    wasmCbIndex: number
+                ) {
                     setTimeout(
-                        () => context.wasmCallback(fnIndex, param),
-                        delay_ms
+                        () => context.wasmCallback(wasmCbIndex, wasmCbPtr),
+                        delayMs
                     );
                 },
 
@@ -99,49 +126,43 @@ export class Context {
                 },
 
                 // TODO: context argument
-                open_db(pos: number, len: number, param: any, fnIndex: number) {
+                open_db(
+                    pos: number,
+                    len: number,
+                    wasmCbPtr: number,
+                    wasmCbIndex: number
+                ) {
                     const dbName = context.decodeStr(pos, len);
 
-                    const req = context.db.open(dbName, 1);
-
-                    req.onupgradeneeded = (_e: any) =>
-                        req.result.createObjectStore("kv", { keyPath: "k" });
-                    req.onsuccess = (_e: any) =>
+                    context.dbAdapter!.open(dbName, (error, db) => {
+                        if (error) throw error;
                         context.wasmCallback(
-                            fnIndex,
-                            param,
-                            context.addObj(req.result)
+                            wasmCbIndex,
+                            wasmCbPtr,
+                            context.addObj(db)
                         );
-
-                    req.onupgradeneeded = (_e: any) =>
-                        req.result.createObjectStore("kv", { keyPath: "k" });
-                    req.onsuccess = (_e: any) =>
-                        context.wasmCallback(
-                            fnIndex,
-                            param,
-                            context.addObj(req.result)
-                        );
+                    });
                 },
 
                 // TODO: automatically abort transactions which aren't committed?
                 // TODO: give this an async interface?
                 create_transaction(dbIndex: number, writable: boolean) {
-                    const trx = context.objects[dbIndex].transaction(
-                        "kv",
-                        writable ? "readwrite" : "readonly"
+                    const db = context.objects[dbIndex] as ClarionDbAdapter;
+                    const trx = context.dbAdapter!.createTransaction(
+                        db,
+                        writable
                     );
-                    const kv = trx.objectStore("kv");
-                    return context.addObj({ trx, kv });
+                    return context.addObj(trx);
                 },
 
                 // TODO: give this an async interface?
                 abort_transaction(trxIndex: number) {
-                    context.objects[trxIndex].trx.abort();
+                    context.getObj<ClarionDbTrx>(trxIndex).abort();
                 },
 
                 // TODO: give this an async interface?
                 commit_transaction(trxIndex: number) {
-                    context.objects[trxIndex].trx.commit();
+                    context.getObj<ClarionDbTrx>(trxIndex).commit();
                 },
 
                 set_kv(
@@ -150,28 +171,32 @@ export class Context {
                     keyLen: number,
                     value: number,
                     valueLen: number,
-                    params: any,
-                    fnIndex: number
+                    wasmCbPtr: any,
+                    wasmCbIndex: number
                 ) {
-                    console.log("set_kv", {
-                        k: context.uint8Array(key, keyLen),
-                        v: context.uint8Array(value, valueLen),
-                    });
-                    const req = context.objects[trxIndex].kv.put({
-                        k: new Uint8Array(context.uint8Array(key, keyLen)),
-                        v: new Uint8Array(context.uint8Array(value, valueLen)),
-                    });
-                    req.onsuccess = (_e: any) =>
-                        context.wasmCallback(fnIndex, params);
-                    req.onerror = (e: any) => console.error(e);
+                    const data = {
+                        key: new Uint8Array(context.uint8Array(key, keyLen)),
+                        value: new Uint8Array(
+                            context.uint8Array(value, valueLen)
+                        ),
+                    };
+                    console.log("set_kv", data);
+                    context
+                        .getObj<ClarionDbTrx>(trxIndex)
+                        .put(data.key, data.value);
+                    context.wasmCallback(wasmCbIndex, wasmCbPtr);
                 },
 
-                create_cursor(trxIndex: number, params: any, fnIndex: number) {
+                create_cursor(
+                    trxIndex: number,
+                    wasmCbPtr: any,
+                    wasmCbIndex: number
+                ) {
                     const req = context.objects[trxIndex].kv.openCursor();
                     req.onsuccess = (_e: any) =>
                         context.wasmCallback(
-                            fnIndex,
-                            params,
+                            wasmCbIndex,
+                            wasmCbPtr,
                             context.addObj(req)
                         );
                     req.onerror = (e: any) => console.error(e);
@@ -184,15 +209,19 @@ export class Context {
 
                 cursor_value(cursorIndex: number) {
                     const c = context.objects[cursorIndex].result;
-                    if (!c) context.oops("cursor has no value");
+                    if (!c) context.throwError("cursor has no value");
                     return context.addObj(c.value.v);
                 },
 
-                cursor_next(cursorIndex: number, params: any, fnIndex: number) {
+                cursor_next(
+                    cursorIndex: number,
+                    wasmCbPtr: any,
+                    wasmCbIndex: number
+                ) {
                     const req = context.objects[cursorIndex];
-                    if (!req.result) context.oops("cursor has no value");
+                    if (!req.result) context.throwError("cursor has no value");
                     req.onsuccess = (_e: any) =>
-                        context.wasmCallback(fnIndex, params);
+                        context.wasmCallback(wasmCbIndex, wasmCbPtr);
                     req.result.continue();
                 },
             },

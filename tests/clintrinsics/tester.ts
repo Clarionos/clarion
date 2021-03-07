@@ -2,7 +2,7 @@ import { Context } from "clwasmer";
 import { readFileSync } from "fs";
 
 const loadClarion = async (path: string) => {
-    const context = new Context();
+    const context = new Context([path, "-h"]);
     try {
         const wasm = readFileSync(path);
         await context.instanciate(wasm);
