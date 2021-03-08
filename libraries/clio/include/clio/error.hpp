@@ -8,7 +8,10 @@ namespace clio {
      */
     template<typename T>
     [[noreturn]] void throw_error( T&& e ){
-        throw e;
-//        abort();
+        #ifdef __cpp_exceptions
+            throw e;
+        #else
+            abort();
+        #endif
     }
 };

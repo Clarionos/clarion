@@ -13,6 +13,7 @@ native/tests/clio/clio_tests
 mkdir -p clariondata
 NODE_PATH=dist CLARION_WASM_PATH=wasm/tests/web/a.wasm node dist/clariond/index.js
 NODE_PATH=dist node dist/clintrinsics/tester.js wasm/tests/clintrinsics/test-clintrinsics.wasm
+NODE_PATH=dist node dist/clintrinsics/tester.js wasm/tests/clio/clio_tests.wasm
 ```
 
 ## Ubuntu 20.04
