@@ -1,5 +1,6 @@
 const CopyPlugin = require("copy-webpack-plugin");
 const path = require("path");
+const webpack = require("webpack");
 
 const dist = path.resolve(__dirname, "../pwa");
 
@@ -28,8 +29,14 @@ module.exports = {
         new CopyPlugin({
             patterns: [
                 { from: "src/programs/clarionpwa/index.html", to: dist },
-                { from: "../wasm/tests/web/a.wasm", to: dist + '/clarion.wasm' },
+                {
+                    from: "../wasm/tests/web/a.wasm",
+                    to: dist + "/clarion.wasm",
+                },
             ],
+        }),
+        new webpack.EnvironmentPlugin({
+            NODE_DEBUG: false,
         }),
     ],
     resolve: {
