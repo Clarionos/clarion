@@ -1,8 +1,8 @@
 # ClarionOS
 
-Introduction: https://github.com/bytemaster/clarion/discussions/2
-Discussions: https://github.com/bytemaster/clarion/discussions
-Telegram: https://t.me/clarionos
+-   Introduction: https://github.com/bytemaster/clarion/discussions/2
+-   Discussions: https://github.com/bytemaster/clarion/discussions
+-   Telegram: https://t.me/clarionos
 
 ## Build
 
