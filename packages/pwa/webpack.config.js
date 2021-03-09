@@ -1,10 +1,11 @@
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-// const CopyPlugin = require("copy-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 
 const path = require("path");
 const dist = path.resolve(__dirname, "dist");
+const clarionPath = process.env.CLARION_WASM_PATH;
 
 module.exports = {
     entry: "./src/index.ts",
@@ -24,15 +25,14 @@ module.exports = {
         ],
     },
     plugins: [
-        // new CopyPlugin({
-        //   patterns: [
-        //     { from: "./public", to: dist },
-        //     {
-        //       from: "../a.wasm",
-        //       to: dist + "/clarion.wasm",
-        //     },
-        //   ],
-        // }),
+        new CopyPlugin({
+            patterns: [
+                {
+                    from: clarionPath,
+                    to: dist + "/clarion.wasm",
+                },
+            ],
+        }),
         new HtmlWebpackPlugin({
             title: "Clarion PWA",
         }),

@@ -20,6 +20,7 @@
         "@clarionos/bios": "^0.1.0"
     },
     "devDependencies": {
+        "copy-webpack-plugin": "^8.0.0",
         "html-webpack-plugin": "^5.3.0",
         "rimraf": "~3.0.2",
         "ts-loader": "^8.0.17",

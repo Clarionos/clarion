@@ -48,12 +48,13 @@ endif()
 ########## TS PACKAGES ####################
 if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
     add_custom_target(yarn ALL
+        DEPENDS wasm
         COMMAND yarn
-        COMMAND yarn build
+        COMMAND CLARION_WASM_PATH=${CMAKE_BINARY_DIR}/a.wasm yarn build
     )
 
     add_custom_target(packages ALL
-        DEPENDS yarn wasm
+        DEPENDS yarn
         COMMAND rm -rf ${CMAKE_BINARY_DIR}/dist
 
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/tester
@@ -69,12 +70,11 @@ if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
 
     add_custom_target(package-wasm
         DEPENDS wasm
-        COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/clarion.wasm
         COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/clarion.wasm
     )
 
     add_custom_target(dev
         DEPENDS yarn package-wasm
-        COMMAND yarn dev
+        COMMAND CLARION_WASM_PATH=${CMAKE_BINARY_DIR}/a.wasm yarn dev
     )
 endif()
