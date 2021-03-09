@@ -46,34 +46,36 @@ else()
 endif()
 
 ########## TS PACKAGES ####################
-add_custom_target(yarn ALL
-    COMMAND yarn
-    COMMAND yarn build
-)
+if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
+    add_custom_target(yarn ALL
+        COMMAND yarn
+        COMMAND yarn build
+    )
 
-add_custom_target(packages ALL
-    DEPENDS yarn
-    COMMAND rm -rf ${CMAKE_BINARY_DIR}/dist
+    add_custom_target(packages ALL
+        DEPENDS yarn
+        COMMAND rm -rf ${CMAKE_BINARY_DIR}/dist
 
-    COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/tester
-    COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/tester/dist/* ${CMAKE_BINARY_DIR}/dist/tester
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/tester
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/tester/dist/* ${CMAKE_BINARY_DIR}/dist/tester
 
-    COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/d
-    COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/* ${CMAKE_BINARY_DIR}/dist/d
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/d
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/* ${CMAKE_BINARY_DIR}/dist/d
 
-    COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/pwa
-    COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/* ${CMAKE_BINARY_DIR}/dist/pwa
-)
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/pwa
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/* ${CMAKE_BINARY_DIR}/dist/pwa
+    )
 
-add_custom_target(clariond
-    DEPENDS packages wasm
-    COMMAND mkdir -p clariondata
-    COMMAND CLARION_WASM_PATH=a.wasm node dist/d
-)
+    add_custom_target(clariond
+        DEPENDS packages wasm
+        COMMAND mkdir -p clariondata
+        COMMAND CLARION_WASM_PATH=a.wasm node dist/d
+    )
 
-add_custom_target(packages-dev
-    DEPENDS yarn wasm
-    COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/clarion.wasm
-    COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/clarion.wasm
-    COMMAND yarn dev
-)
+    add_custom_target(packages-dev
+        DEPENDS yarn wasm
+        COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/clarion.wasm
+        COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/clarion.wasm
+        COMMAND yarn dev
+    )
+endif()
