@@ -3,15 +3,14 @@
 Set the `WASI_SDK_PREFIX` environment variable before building (see architecture-specific instructions below). Alternatively, use cmake's `-DWASI_SDK_PREFIX=....` option. Also make sure `nodejs 14`, `npm 6.14`, and `yarn 1.22` are in your path.
 
 ```
-git submodule update --init --recursive 
+git submodule update --init --recursive
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j
 
 ctest -j10
-mkdir -p clariondata
-NODE_PATH=dist CLARION_WASM_PATH=a.wasm node dist/clariond/index.js
+CLARION_WASM_PATH=a.wasm node dist/clariond
 ```
 
 ## Ubuntu 20.04

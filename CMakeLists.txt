@@ -53,29 +53,28 @@ if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
     )
 
     add_custom_target(packages ALL
-        DEPENDS yarn
+        DEPENDS yarn wasm
         COMMAND rm -rf ${CMAKE_BINARY_DIR}/dist
 
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/tester
         COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/tester/dist/* ${CMAKE_BINARY_DIR}/dist/tester
 
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/d
-        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/* ${CMAKE_BINARY_DIR}/dist/d
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/clariond
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/* ${CMAKE_BINARY_DIR}/dist/clariond
+        COMMAND mkdir -p clariondata
 
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/pwa
         COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/* ${CMAKE_BINARY_DIR}/dist/pwa
     )
 
-    add_custom_target(clariond
-        DEPENDS packages wasm
-        COMMAND mkdir -p clariondata
-        COMMAND CLARION_WASM_PATH=a.wasm node dist/d
-    )
-
-    add_custom_target(packages-dev
-        DEPENDS yarn wasm
+    add_custom_target(package-wasm
+        DEPENDS wasm
         COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/clarion.wasm
         COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/clarion.wasm
+    )
+
+    add_custom_target(dev
+        DEPENDS yarn package-wasm
         COMMAND yarn dev
     )
 endif()

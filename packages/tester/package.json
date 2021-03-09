@@ -1,27 +1,27 @@
 {
-  "name": "@clarionos/tester",
-  "version": "0.1.0",
-  "main": "dist/index",
-  "types": "dist/index",
-  "license": "MIT",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "yarn run clean && yarn run compile",
-    "clean": "rimraf -rf ./dist",
-    "compile": "tsc -p tsconfig.build.json",
-    "prepublishOnly": "yarn run build",
-    "lint": "eslint --ext .js,.ts src",
-    "test": "yarn run build"
-  },
-  "devDependencies": {
-    "@types/node": "^14.14.32",
-    "rimraf": "~3.0.2",
-    "typescript": "~4.2.0"
-  },
-  "dependencies": {
-    "node-lmdb": "^0.9.4",
-    "@clarionos/bios": "^0.1.0"
-  }
+    "name": "@clarionos/tester",
+    "version": "0.1.0",
+    "main": "dist/index",
+    "types": "dist/index",
+    "license": "MIT",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "yarn run clean && yarn run compile",
+        "clean": "rimraf -rf ./dist",
+        "compile": "tsc -p tsconfig.build.json",
+        "prepublishOnly": "yarn run build",
+        "lint": "eslint --ext .js,.ts src",
+        "test": "yarn run build"
+    },
+    "devDependencies": {
+        "@types/node": "^14.14.32",
+        "rimraf": "~3.0.2",
+        "typescript": "~4.2.0"
+    },
+    "dependencies": {
+        "node-lmdb": "^0.9.4",
+        "@clarionos/bios": "^0.1.0"
+    }
 }
