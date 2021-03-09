@@ -45,6 +45,36 @@ else()
     message(WARNING "WASI_SDK_PREFIX isn't defined; skipping wasm")
 endif()
 
+########## TS PACKAGES ####################
 if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
-    add_subdirectory(ts)
+    add_custom_target(yarn ALL
+        DEPENDS wasm
+        COMMAND yarn
+        COMMAND CLARION_WASM_PATH=${CMAKE_BINARY_DIR}/a.wasm yarn build
+    )
+
+    add_custom_target(packages ALL
+        DEPENDS yarn
+        COMMAND rm -rf ${CMAKE_BINARY_DIR}/dist
+
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/tester
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/tester/dist/* ${CMAKE_BINARY_DIR}/dist/tester
+
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/clariond
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/* ${CMAKE_BINARY_DIR}/dist/clariond
+        COMMAND mkdir -p clariondata
+
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/pwa
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/* ${CMAKE_BINARY_DIR}/dist/pwa
+    )
+
+    add_custom_target(package-wasm
+        DEPENDS wasm
+        COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/clarion.wasm
+    )
+
+    add_custom_target(dev
+        DEPENDS yarn package-wasm
+        COMMAND CLARION_WASM_PATH=${CMAKE_BINARY_DIR}/a.wasm yarn dev
+    )
 endif()
