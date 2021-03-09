@@ -18,7 +18,7 @@ function(wasm_test N)
     add_test(
         NAME w-${N}
         WORKING_DIRECTORY ${ROOT_BINARY_DIR}
-        COMMAND node dist/clintrinsics/tester.js ${N}
+        COMMAND node dist/clintrinsics/tester.js ${N}.wasm
     )
     set_tests_properties(w-${N} PROPERTIES ENVIRONMENT NODE_PATH=dist)
 endfunction()
