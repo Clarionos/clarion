@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.build.json",
+
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@clarionos/*": ["packages/*/src"]
+    },
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": []
+  }
+}

@@ -13,3 +13,6 @@ compile_commands.json
 *.wat
 node_modules
 .DS_Store
+dist
+*.tsbuildinfo
+.nyc_output
