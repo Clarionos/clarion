@@ -10,3 +10,5 @@ target_link_libraries( clarionc
         PRIVATE appbase Boost::coroutine
         PRIVATE -Wl,${whole_archive_flag} clarion-net -Wl,${no_whole_archive_flag}
 )
+
+set_target_properties(clarionc PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ROOT_BINARY_DIR})

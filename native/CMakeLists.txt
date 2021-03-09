@@ -1,7 +1,8 @@
 project( native )
 
 set(IS_NATIVE YES)
-set(REPO_DIR ${CMAKE_SOURCE_DIR}/..)
+set(ROOT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/..)
+set(ROOT_BINARY_DIR ${CMAKE_BINARY_DIR}/..)
 
 cmake_minimum_required(VERSION 3.16.3)
 

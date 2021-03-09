@@ -30,7 +30,7 @@ module.exports = {
             patterns: [
                 { from: "src/programs/clarionpwa/index.html", to: dist },
                 {
-                    from: "../wasm/tests/web/a.wasm",
+                    from: "../a.wasm",
                     to: dist + "/clarion.wasm",
                 },
             ],

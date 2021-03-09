@@ -113,7 +113,7 @@
         },
     };
 
-    const x = await WebAssembly.instantiateStreaming(fetch('../../build/wasm/tests/web/a.wasm'), imports);
+    const x = await WebAssembly.instantiateStreaming(fetch('../../build/a.wasm'), imports);
     module = x.module;
     instance = x.instance;
     console.log({ module, instance });

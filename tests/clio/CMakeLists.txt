@@ -17,3 +17,5 @@ if(DEFINED IS_WASM)
     )
     target_link_libraries(clio_tests clio catch2-portable boost)
 endif()
+
+set_target_properties(clio_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ROOT_BINARY_DIR})
