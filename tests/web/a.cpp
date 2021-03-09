@@ -25,14 +25,14 @@ clintrinsics::task<> testco2(uint32_t delay_ms)
 clintrinsics::task<> testdb()
 {
     auto db = co_await clintrinsics::open_db("foo");
-    printf("> database handle: %p\n", db.handle);
+    printf(">> database handle: %p\n", db.handle);
     auto trx = db.create_transaction(true);
-    printf("> trx handle: %p\n", trx.handle);
+    printf(">> trx handle: %p\n", trx.handle);
     co_await trx.set_kv("abcd", "efgh");
     co_await trx.set_kv("ijkl", "mnop");
 
-    // for co_await(auto x: co_await trx.everything())
-    //     printf("... blob handle %p\n", x.handle);
+    for co_await(auto x: co_await trx.everything())
+        printf("... blob handle %p\n", x.handle);
 
     trx.commit();
 }

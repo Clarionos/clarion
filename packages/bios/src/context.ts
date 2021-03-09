@@ -170,18 +170,6 @@ export class Context {
                     wasmCbPtr: any,
                     wasmCbIndex: number
                 ) => {
-                    const data = {
-                        key: new Uint8Array(context.uint8Array(key, keyLen)),
-                        value: new Uint8Array(
-                            context.uint8Array(value, valueLen)
-                        ),
-                    };
-                    console.log("set_kv", data);
-                    context
-                        .getObj<ClarionDbTrx>(trxIndex)
-                        .put(data.key, data.value);
-                    context.wasmCallback(wasmCbIndex, wasmCbPtr);
-
                     try {
                         const data = {
                             key: new Uint8Array(
@@ -227,10 +215,6 @@ export class Context {
 
                 // TODO: remove? Maybe create_cursor and cursor_next should indicate this?
                 cursor_has_value(cursorIndex: number) {
-                    console.info(
-                        "cursor_has_value",
-                        context.getObj<ClarionDbCursor>(cursorIndex).hasValue()
-                    );
                     return context
                         .getObj<ClarionDbCursor>(cursorIndex)
                         .hasValue();

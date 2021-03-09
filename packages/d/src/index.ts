@@ -9,11 +9,11 @@ import { ClarionDb } from "./db";
 let lmdbEnv = new lmdb.Env();
 
 const main = async () => {
-    console.info(">>> Initializing Clarion...");
+    console.info("> Initializing Clarion...");
     const db = initDb();
 
-    const clarion = await loadClarion(db);
-    console.info(">>> Clarion was loaded", clarion);
+    await loadClarion(db);
+    console.info("> Clarion WASM was loaded");
 
     // tolerance time since everything is async and we need to give time for
     // completing the wasm actions

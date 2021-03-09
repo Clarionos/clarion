@@ -75,6 +75,6 @@ if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
 
     add_custom_target(dev
         DEPENDS yarn package-wasm
-        COMMAND CLARION_WASM_PATH=${CMAKE_BINARY_DIR}/a.wasm yarn dev
+        COMMAND CLARION_WASM_PATH=${CMAKE_BINARY_DIR}/a.wasm yarn dev --stream
     )
 endif()
