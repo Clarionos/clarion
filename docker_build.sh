@@ -11,9 +11,7 @@ docker run \
         cd build-docker
         cmake -DCMAKE_BUILD_TYPE=Release ..
         make -j
-        ./clio_tests
+        ctest -j10
         mkdir -p clariondata
         NODE_PATH=dist CLARION_WASM_PATH=a.wasm node dist/clariond/index.js
-        NODE_PATH=dist node dist/clintrinsics/tester.js test-clintrinsics.wasm
-        NODE_PATH=dist node dist/clintrinsics/tester.js clio_tests.wasm
 "
