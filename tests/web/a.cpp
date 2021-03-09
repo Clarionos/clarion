@@ -2,34 +2,34 @@
 
 #include <string>
 
-clintrinsics::task<std::string> testco(std::string s, uint32_t delay_ms)
+clintrinsics::Task<std::string> testco(std::string s, uint32_t delayMillisec)
 {
     std::string result;
     for (int i = 0; i < 10; ++i)
     {
         printf("s = \"%s\", i = %d\n", s.c_str(), i);
         result += "(" + s + ")";
-        co_await clintrinsics::later(delay_ms);
+        co_await clintrinsics::later(delayMillisec);
     }
     printf("s = \" %s \", finished\n", s.c_str());
     co_return result;
 }
 
-clintrinsics::task<> testco2(uint32_t delay_ms)
+clintrinsics::Task<> testco2(uint32_t delayMillisec)
 {
-    printf("loop 1 returned: %s\n", (co_await testco("loop 1", delay_ms)).c_str());
-    printf("loop 2 returned: %s\n", (co_await testco("loop 2", delay_ms)).c_str());
+    printf("loop 1 returned: %s\n", (co_await testco("loop 1", delayMillisec)).c_str());
+    printf("loop 2 returned: %s\n", (co_await testco("loop 2", delayMillisec)).c_str());
     printf("testco2 finished\n");
 }
 
-clintrinsics::task<> testdb()
+clintrinsics::Task<> testdb()
 {
-    auto db = co_await clintrinsics::open_db("foo");
+    auto db = co_await clintrinsics::openDb("foo");
     printf(">> database handle: %p\n", db.handle);
-    auto trx = db.create_transaction(true);
+    auto trx = db.createTransaction(true);
     printf(">> trx handle: %p\n", trx.handle);
-    co_await trx.set_kv("abcd", "efgh");
-    co_await trx.set_kv("ijkl", "mnop");
+    co_await trx.setKV("abcd", "efgh");
+    co_await trx.setKV("ijkl", "mnop");
 
     for co_await(auto x: co_await trx.everything())
         printf("... blob handle %p\n", x.handle);

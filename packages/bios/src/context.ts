@@ -100,7 +100,7 @@ export class Context {
                     }
                 },
 
-                callme_later(
+                callmeLater(
                     delayMs: number,
                     wasmCbPtr: any,
                     wasmCbIndex: number
@@ -111,9 +111,9 @@ export class Context {
                     );
                 },
 
-                release_object(index: number) {
+                releaseObject(index: number) {
                     console.log(
-                        "release_object",
+                        "releaseObject",
                         index,
                         context.objects[index]
                     );
@@ -121,7 +121,7 @@ export class Context {
                 },
 
                 // TODO: context argument
-                open_db: async (
+                openDb: async (
                     pos: number,
                     len: number,
                     wasmCbPtr: number,
@@ -142,7 +142,7 @@ export class Context {
 
                 // TODO: automatically abort transactions which aren't committed?
                 // TODO: give this an async interface?
-                create_transaction(dbIndex: number, writable: boolean) {
+                createTransaction(dbIndex: number, writable: boolean) {
                     const db = context.objects[dbIndex] as ClarionDbAdapter;
                     const trx = context.dbAdapter!.createTransaction(
                         db,
@@ -152,16 +152,16 @@ export class Context {
                 },
 
                 // TODO: give this an async interface?
-                abort_transaction(trxIndex: number) {
+                abortTransaction(trxIndex: number) {
                     context.getObj<ClarionDbTrx>(trxIndex).abort();
                 },
 
                 // TODO: give this an async interface?
-                commit_transaction(trxIndex: number) {
+                commitTransaction(trxIndex: number) {
                     context.getObj<ClarionDbTrx>(trxIndex).commit();
                 },
 
-                set_kv: async (
+                setKV: async (
                     trxIndex: number,
                     key: number,
                     keyLen: number,
@@ -179,7 +179,7 @@ export class Context {
                                 context.uint8Array(value, valueLen)
                             ),
                         };
-                        console.info("set_kv", data);
+                        console.info("setKV", data);
                         const trx = context.getObj<ClarionDbTrx>(trxIndex);
 
                         await trx.put(data.key, data.value);
@@ -189,7 +189,7 @@ export class Context {
                     }
                 },
 
-                create_cursor: async (
+                createCursor: async (
                     trxIndex: number,
                     wasmCbPtr: any,
                     wasmCbIndex: number
@@ -202,7 +202,7 @@ export class Context {
                             throw new Error("cursor has no value");
                         }
 
-                        console.info("create_cursor key", cursor.getKey());
+                        console.info("createCursor key", cursor.getKey());
                         context.wasmCallback(
                             wasmCbIndex,
                             wasmCbPtr,
@@ -213,22 +213,22 @@ export class Context {
                     }
                 },
 
-                // TODO: remove? Maybe create_cursor and cursor_next should indicate this?
-                cursor_has_value(cursorIndex: number) {
+                // TODO: remove? Maybe createCursor and cursorNext should indicate this?
+                cursorHasValue(cursorIndex: number) {
                     return context
                         .getObj<ClarionDbCursor>(cursorIndex)
                         .hasValue();
                 },
 
-                cursor_value(cursorIndex: number) {
+                cursorValue(cursorIndex: number) {
                     const value = context
                         .getObj<ClarionDbCursor>(cursorIndex)
                         .getValue();
-                    console.info("cursor_value", value);
+                    console.info("cursorValue", value);
                     return context.addObj(value);
                 },
 
-                cursor_next: async (
+                cursorNext: async (
                     cursorIndex: number,
                     wasmCbPtr: any,
                     wasmCbIndex: number

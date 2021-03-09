@@ -12,15 +12,15 @@ namespace clintrinsics
     namespace coro = std::experimental::coroutines_v1;
 
     template <typename Ret = void>
-    struct task;
+    struct Task;
 
     template <typename Ret, typename Derived>
-    struct task_promise_base
+    struct TaskPromiseBase
     {
         coro::coroutine_handle<void> continuation;
 
-        task_promise_base() { printf("task_promise::task_promise\n"); }
-        ~task_promise_base() { printf("task_promise::~task_promise\n"); }
+        TaskPromiseBase() { printf("TaskPromise::TaskPromise\n"); }
+        ~TaskPromiseBase() { printf("TaskPromise::~TaskPromise\n"); }
         auto initial_suspend() { return coro::suspend_always(); }
         auto final_suspend() noexcept
         {
@@ -28,12 +28,12 @@ namespace clintrinsics
                 continuation.resume();
             return coro::suspend_never();
         }
-        task<Ret> get_return_object() { return {(Derived *)this}; }
+        Task<Ret> get_return_object() { return {(Derived *)this}; }
         void unhandled_exception() { std::abort(); }
     };
 
     template <typename Ret>
-    struct task_promise : task_promise_base<Ret, task_promise<Ret>>
+    struct TaskPromise : TaskPromiseBase<Ret, TaskPromise<Ret>>
     {
         Ret *retval = nullptr;
 
@@ -46,34 +46,34 @@ namespace clintrinsics
     };
 
     template <>
-    struct task_promise<void> : task_promise_base<void, task_promise<void>>
+    struct TaskPromise<void> : TaskPromiseBase<void, TaskPromise<void>>
     {
         void return_void() {}
     };
 
     template <typename Ret>
-    struct task_base
+    struct TaskBase
     {
-        using promise_type = task_promise<Ret>;
+        using promise_type = TaskPromise<Ret>;
 
         promise_type *promise = nullptr;
 
-        task_base() = default;
-        task_base(promise_type *promise) : promise{promise} {}
-        task_base(const task_base &) = delete;
-        task_base(task_base &&src)
+        TaskBase() = default;
+        TaskBase(promise_type *promise) : promise{promise} {}
+        TaskBase(const TaskBase &) = delete;
+        TaskBase(TaskBase &&src)
         {
             *this = std::move(src);
         }
 
-        ~task_base()
+        ~TaskBase()
         {
             if (promise)
                 coro::coroutine_handle<promise_type>::from_promise(*promise).destroy();
         }
 
-        task_base &operator=(const task_base &) = delete;
-        task_base &operator=(task_base &&src)
+        TaskBase &operator=(const TaskBase &) = delete;
+        TaskBase &operator=(TaskBase &&src)
         {
             promise = src.promise;
             src.promise = nullptr;
@@ -97,7 +97,7 @@ namespace clintrinsics
             coro::coroutine_handle<promise_type>::from_promise(*promise).resume();
             promise = nullptr;
         }
-    }; // task_base
+    }; // TaskBase
 
     // A task is a coroutine which supports async operations. Once created, a task may be:
     //  * started exactly once using start(), or
@@ -107,41 +107,41 @@ namespace clintrinsics
     // Starting a task or co_awaiting on a task detaches ownership from the task
     // object; the running task is automatically destroyed when it's done executing.
     template <typename Ret>
-    struct task : task_base<Ret>
+    struct Task : TaskBase<Ret>
     {
-        using task_base<Ret>::task_base;
+        using TaskBase<Ret>::TaskBase;
 
         Ret retval = {};
 
         void await_suspend(coro::coroutine_handle<void> co)
         {
             this->promise->retval = &retval;
-            task_base<Ret>::await_suspend(co);
+            TaskBase<Ret>::await_suspend(co);
         }
 
         Ret await_resume() { return std::move(retval); }
-    }; // task
+    }; // Task
 
     template <>
-    struct task<void> : task_base<void>
+    struct Task<void> : TaskBase<void>
     {
-        using task_base<void>::task_base;
+        using TaskBase<void>::TaskBase;
 
         void await_resume() {}
     };
 
-    // TODO: name
+    // An awaitable that already as a (single-use) value
     template <typename T>
-    struct trivial_awaitable
+    struct NoWait
     {
         T value;
 
-        trivial_awaitable(T value) : value{std::move(value)} {}
-        trivial_awaitable(const trivial_awaitable &) = delete;
-        trivial_awaitable(trivial_awaitable &&) = default;
+        NoWait(T value) : value{std::move(value)} {}
+        NoWait(const NoWait &) = delete;
+        NoWait(NoWait &&) = default;
 
-        trivial_awaitable &operator=(const trivial_awaitable &) = delete;
-        trivial_awaitable &operator=(trivial_awaitable &&) = default;
+        NoWait &operator=(const NoWait &) = delete;
+        NoWait &operator=(NoWait &&) = default;
 
         bool await_ready() { return true; }
         void await_suspend(coro::coroutine_handle<void>) {}
@@ -151,7 +151,7 @@ namespace clintrinsics
     // An awaitable which invokes an external async function, then feeds
     // the result through a lambda
     template <typename Ret, auto extFn, typename Args, typename Lambda>
-    struct call_async_awaitable
+    struct CallAsyncAwaitable
     {
         Args args;
         Lambda lambda;
@@ -164,7 +164,7 @@ namespace clintrinsics
         {
             this->co = co;
             auto post_process = [](void *p, auto... result) {
-                auto self = (call_async_awaitable *)p;
+                auto self = (CallAsyncAwaitable *)p;
                 self->result = std::invoke(self->lambda, result...);
                 self->co.resume();
             };
@@ -175,7 +175,7 @@ namespace clintrinsics
     };
 
     template <auto extFn, typename Args, typename Lambda>
-    struct call_async_awaitable<void, extFn, Args, Lambda>
+    struct CallAsyncAwaitable<void, extFn, Args, Lambda>
     {
         Args args;
         Lambda lambda;
@@ -187,7 +187,7 @@ namespace clintrinsics
         {
             this->co = co;
             auto post_process = [](void *p, auto... result) {
-                auto self = (call_async_awaitable *)p;
+                auto self = (CallAsyncAwaitable *)p;
                 std::invoke(self->lambda, result...);
                 self->co.resume();
             };
@@ -200,8 +200,8 @@ namespace clintrinsics
     // Return an awaitable which invokes an external async function, then feeds
     // the result through a lambda
     template <typename Ret, auto extFn, typename Args, typename Lambda>
-    auto call_external_async(Args args, Lambda lambda)
+    auto callExternalAsync(Args args, Lambda lambda)
     {
-        return call_async_awaitable<Ret, extFn, Args, Lambda>{std::move(args), std::move(lambda)};
+        return CallAsyncAwaitable<Ret, extFn, Args, Lambda>{std::move(args), std::move(lambda)};
     }
 }

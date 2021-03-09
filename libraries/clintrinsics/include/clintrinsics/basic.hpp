@@ -19,37 +19,37 @@ namespace clintrinsics
 
     namespace imports
     {
-        [[clang::import_module("clarion"), clang::import_name("callme_later")]] void callme_later(uint32_t delay_ms, void *p, void (*f)(void *));
+        [[clang::import_module("clarion"), clang::import_name("callmeLater")]] void callmeLater(uint32_t delayMillisec, void *p, void (*f)(void *));
     }
 
-    inline auto later(uint32_t delay_ms)
+    inline auto later(uint32_t delayMillisec)
     {
-        return call_external_async<void, imports::callme_later>(std::tuple{delay_ms}, [] {});
+        return callExternalAsync<void, imports::callmeLater>(std::tuple{delayMillisec}, [] {});
     }
 
     namespace imports
     {
-        [[clang::import_module("clarion"), clang::import_name("release_object")]] void release_object(void *handle);
+        [[clang::import_module("clarion"), clang::import_name("releaseObject")]] void releaseObject(void *handle);
     }
 
     template <typename Tag>
-    struct external_object
+    struct ExternalObject
     {
         Tag *handle = nullptr;
 
-        external_object() = default;
-        external_object(Tag *handle) : handle{handle} {}
-        external_object(const external_object &) = delete;
-        external_object(external_object &&src) { *this = std::move(src); }
+        ExternalObject() = default;
+        ExternalObject(Tag *handle) : handle{handle} {}
+        ExternalObject(const ExternalObject &) = delete;
+        ExternalObject(ExternalObject &&src) { *this = std::move(src); }
 
-        ~external_object()
+        ~ExternalObject()
         {
             if (handle)
-                imports::release_object(handle);
+                imports::releaseObject(handle);
         }
 
-        external_object &operator=(const external_object &) = delete;
-        external_object &operator=(external_object &&src)
+        ExternalObject &operator=(const ExternalObject &) = delete;
+        ExternalObject &operator=(ExternalObject &&src)
         {
             handle = src.handle;
             src.handle = nullptr;
