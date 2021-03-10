@@ -1,18 +1,46 @@
 import { Context } from "@clarionos/bios";
 
-import { ClarionDb } from "./db";
+import "./pwa-tests";
+import "./websockets";
+import { getContext } from "./clarion";
 
-const wasmFilePath = "/clarion.wasm";
+let clarionContext: Context;
 
-const init = async (): Promise<void> => {
-    const response = await fetch(wasmFilePath);
-    const wasmBytes = new Uint8Array(await response.arrayBuffer());
+const init = async () => {
+    clarionContext = await getContext();
+};
 
-    const clarionDb = new ClarionDb();
-    const context = new Context(["clarion.wasm"], clarionDb as any);
+const startClarionButton = document.getElementById("start-clarion");
+const clarionKvDiv = document.getElementById("clarion-kv");
+startClarionButton.addEventListener("click", () => {
+    (clarionContext.instance!.exports._start as Function)();
+    clarionKvDiv.innerHTML = "loading...";
+    setTimeout(printDbStats, 1500);
+});
 
-    await context.instanciate(wasmBytes);
-    (context.instance!.exports._start as Function)();
+const printDbStats = () => {
+    let db2: any = window.indexedDB.open("foo", 1);
+    db2.onsuccess = () => {
+        db2 = db2.result;
+        let kvStore = db2.transaction("clarion").objectStore("clarion");
+
+        clarionKvDiv.innerHTML = "";
+        kvStore.openCursor().onsuccess = (e) => {
+            let cursor = e.target.result;
+
+            if (cursor) {
+                let key = new TextDecoder().decode(cursor.key);
+                let value = new TextDecoder().decode(cursor.value.v);
+
+                let kvEntries = "<pre>";
+                kvEntries += `${key} -> ${value}\n`;
+                kvEntries += "</pre>";
+
+                clarionKvDiv.innerHTML += kvEntries;
+                cursor.continue();
+            }
+        };
+    };
 };
 
 init();

@@ -1,0 +1,15 @@
+{
+  "background_color": "purple",
+  "description": "Shows random fox pictures and connects to echo websocket.",
+  "display": "fullscreen",
+  "icons": [
+    {
+      "src": "icon/fox-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "name": "ClarionOS",
+  "short_name": "Foxes",
+  "start_url": "/"
+}

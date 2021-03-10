@@ -1,0 +1,60 @@
+html {
+    height: 100%;
+    background: white;
+}
+
+body {
+    height: inherit;
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+@media (orientation: landscape) {
+    img {
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.title {
+    margin: 16px;
+}
+
+.main {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+}
+
+.image {
+    max-width: 200px;
+}
+
+.image img {
+    width: 100%;
+}
+
+.ws {
+    flex: 2;
+    margin-left: 10px;
+}
+
+#install-button {
+    margin-left: 10px;
+    padding: 4px 10px;
+    background-color: #000;
+    color: #fff;
+    border: 0;
+}
+
+#output {
+    border: 1px solid #000;
+    padding: 8px;
+    margin: 8px;
+    max-width: 600px;
+}
+
+.clarion {
+    margin: 18px;
+}

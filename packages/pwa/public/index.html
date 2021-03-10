@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Clarion Demo</title>
+        <link href="style.css" rel="stylesheet" />
+        <link rel="manifest" href="manifest.json" />
+        <link
+            rel="shortcut icon"
+            href="/assets/favicon.ico"
+            type="image/x-icon"
+        />
+        <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+    <body>
+        <h2 class="title">
+            PWA Test <button id="install-button">Install App</button>
+        </h2>
+
+        <div class="main">
+            <div class="image">
+                <img src="/images/fox1.jpg" />
+            </div>
+            <div class="ws">
+                <strong>Websocket Handler</strong>
+                <div id="offline-menu">
+                    <button id="connect">Connect</button>
+                </div>
+
+                <div id="online-menu">
+                    <input
+                        type="text"
+                        id="message"
+                        placeholder="write your mesage here..."
+                    />
+                    <button id="submit">Send</button>
+                    <button id="disconnect">Disconnect</button>
+                </div>
+
+                <div id="output"></div>
+            </div>
+        </div>
+
+        <div class="clarion">
+            <button id="start-clarion">Run Clarion</button>
+
+            <div id="clarion-output"></div>
+        </div>
+
+        <div class="clarion">
+            <h3>Current KV</h3>
+            <div id="clarion-kv"></div>
+        </div>
+
+        <script src="./main.bundle.js"></script>
+    </body>
+</html>
