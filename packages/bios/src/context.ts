@@ -1,4 +1,10 @@
-import { ClarionDbAdapter, ClarionDbCursor, ClarionDbTrx } from "./interfaces";
+import {
+    ClarionDbAdapter,
+    ClarionDbCursor,
+    ClarionDbTrx,
+    ClarionWsAdapter,
+    ClarionWebSocket,
+} from "./interfaces";
 
 export class Context {
     consoleBuf = "";
@@ -7,11 +13,13 @@ export class Context {
     objects: any[] = [null];
     args: string[];
     encodedArgs?: Uint8Array[];
-    dbAdapter?: ClarionDbAdapter;
+    db: ClarionDbAdapter;
+    ws: ClarionWsAdapter;
 
-    constructor(args: string[], dbAdapter?: ClarionDbAdapter) {
+    constructor(args: string[], db: ClarionDbAdapter) {
         this.args = args;
-        this.dbAdapter = dbAdapter;
+        this.db = db;
+        this.ws = new ClarionWebSocket();
     }
 
     throwError(message: string, e?: Error) {
@@ -102,7 +110,7 @@ export class Context {
 
                 callmeLater(
                     delayMs: number,
-                    wasmCbPtr: any,
+                    wasmCbPtr: number,
                     wasmCbIndex: number
                 ) {
                     setTimeout(
@@ -112,11 +120,7 @@ export class Context {
                 },
 
                 releaseObject(index: number) {
-                    console.log(
-                        "releaseObject",
-                        index,
-                        context.objects[index]
-                    );
+                    console.log("releaseObject", index, context.objects[index]);
                     context.objects[index] = null;
                 },
 
@@ -129,7 +133,7 @@ export class Context {
                 ) => {
                     try {
                         const dbName = context.decodeStr(pos, len);
-                        const db = await context.dbAdapter.open(dbName);
+                        const db = await context.db.open(dbName);
                         context.wasmCallback(
                             wasmCbIndex,
                             wasmCbPtr,
@@ -140,24 +144,69 @@ export class Context {
                     }
                 },
 
+                connect: async (
+                    uriPos: number,
+                    uriLen: number,
+                    wasmCbPtr: number,
+                    wasmCbIndex: number
+                ) => {
+                    try {
+                        const uri = context.decodeStr(uriPos, uriLen);
+                        const connection = await context.ws.connect(uri);
+                        context.wasmCallback(
+                            wasmCbIndex,
+                            wasmCbPtr,
+                            context.addObj(connection)
+                        );
+                    } catch (e) {
+                        context.throwError(e);
+                    }
+                },
+
+                sendMessage: (
+                    connectionIndex: number,
+                    messagePos: number,
+                    messageLen: number
+                ) => {
+                    try {
+                        const connection = context.getObj<WebSocket>(
+                            connectionIndex
+                        );
+                        const message = new Uint8Array(
+                            context.uint8Array(messagePos, messageLen)
+                        );
+                        connection.send(message);
+                    } catch (e) {
+                        context.throwError(e);
+                    }
+                },
+
+                close: (connectionIndex: number) => {
+                    try {
+                        const connection = context.getObj<WebSocket>(
+                            connectionIndex
+                        );
+                        connection.close();
+                    } catch (e) {
+                        context.throwError(e);
+                    }
+                },
+
                 // TODO: automatically abort transactions which aren't committed?
                 // TODO: give this an async interface?
-                createTransaction(dbIndex: number, writable: boolean) {
-                    const db = context.objects[dbIndex] as ClarionDbAdapter;
-                    const trx = context.dbAdapter!.createTransaction(
-                        db,
-                        writable
-                    );
+                createTransaction: (dbIndex: number, writable: boolean) => {
+                    const db = context.getObj<ClarionDbAdapter>(dbIndex);
+                    const trx = context.db!.createTransaction(db, writable);
                     return context.addObj(trx);
                 },
 
                 // TODO: give this an async interface?
-                abortTransaction(trxIndex: number) {
+                abortTransaction: (trxIndex: number) => {
                     context.getObj<ClarionDbTrx>(trxIndex).abort();
                 },
 
                 // TODO: give this an async interface?
-                commitTransaction(trxIndex: number) {
+                commitTransaction: (trxIndex: number) => {
                     context.getObj<ClarionDbTrx>(trxIndex).commit();
                 },
 
@@ -167,7 +216,7 @@ export class Context {
                     keyLen: number,
                     value: number,
                     valueLen: number,
-                    wasmCbPtr: any,
+                    wasmCbPtr: number,
                     wasmCbIndex: number
                 ) => {
                     try {
@@ -191,7 +240,7 @@ export class Context {
 
                 createCursor: async (
                     trxIndex: number,
-                    wasmCbPtr: any,
+                    wasmCbPtr: number,
                     wasmCbIndex: number
                 ) => {
                     try {
@@ -214,13 +263,13 @@ export class Context {
                 },
 
                 // TODO: remove? Maybe createCursor and cursorNext should indicate this?
-                cursorHasValue(cursorIndex: number) {
+                cursorHasValue: (cursorIndex: number) => {
                     return context
                         .getObj<ClarionDbCursor>(cursorIndex)
                         .hasValue();
                 },
 
-                cursorValue(cursorIndex: number) {
+                cursorValue: (cursorIndex: number) => {
                     const value = context
                         .getObj<ClarionDbCursor>(cursorIndex)
                         .getValue();
@@ -230,7 +279,7 @@ export class Context {
 
                 cursorNext: async (
                     cursorIndex: number,
-                    wasmCbPtr: any,
+                    wasmCbPtr: number,
                     wasmCbIndex: number
                 ) => {
                     const cursor = context.getObj<ClarionDbCursor>(cursorIndex);

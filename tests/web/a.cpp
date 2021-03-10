@@ -1,4 +1,5 @@
 #include "clintrinsics/database.hpp"
+#include "clintrinsics/net.hpp"
 
 #include <string>
 
@@ -37,6 +38,17 @@ clintrinsics::Task<> testdb()
     trx.commit();
 }
 
+clintrinsics::Task<> testnet()
+{
+    auto connection = co_await clintrinsics::connect("wss://echo.websocket.org/");
+    printf(">> connection handle: %p\n", connection.handle);
+    connection.sendMessage("hey there from CLARION wasm! :)");
+    printf(">> message sent!");
+    co_await clintrinsics::later(3000); // tolerance to wait for echoed message
+    connection.close();
+    printf(">> connection closed!");
+}
+
 int main()
 {
     printf("starting coroutines...\n");
@@ -46,5 +58,6 @@ int main()
     // testco2(200).start();
     // testco2(250).start();
     testdb().start();
+    testnet().start();
     printf("main returned\n");
 }
