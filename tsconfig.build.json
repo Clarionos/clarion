@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2015",
+    "sourceMap": true,
+    "noEmitOnError": true
+  },
+
+  "exclude": ["node_modules", "dist"]
+}

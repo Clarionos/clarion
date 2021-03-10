@@ -1,14 +1,18 @@
-*.cmake
 CMakeFiles
 Makefile
 CMakeCache.txt
 *.a
 *.o
 build
+build-docker
 tests/clio/clio_tests
-<<<<<<< HEAD
 libraries/appbase/version.cpp
 compile_commands.json
 .vscode
 *.wasm
 *.wat
+node_modules
+.DS_Store
+dist
+*.tsbuildinfo
+.nyc_output

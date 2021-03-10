@@ -329,7 +329,7 @@ namespace clio {
 
                 /** in this case the data is a series of offset_ptr<> */
                 if constexpr( std::is_same<T,std::string>::value ) {
-                    auto ptr_array =  reinterpret_cast<offset_ptr*>(_data);
+                    auto ptr_array =  reinterpret_cast<const offset_ptr*>(_data);
                     return *reinterpret_cast<const flat<std::string>*>( ptr_array[index].get< std::vector<T> >() );
                 }else if constexpr( contains_offset_ptr<T>() ) {
                     auto ptr_array =  reinterpret_cast<const offset_ptr*>(_data+sizeof(offset_ptr)*index);

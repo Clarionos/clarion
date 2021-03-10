@@ -1,75 +1,80 @@
-project( clarion )
-
 cmake_minimum_required(VERSION 3.16.3)
+project(clarion)
+include(ExternalProject)
 
-#set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-set( CMAKE_PROJECT_VERSION          0.0.0 )
-set( CMAKE_PROJECT_VERSION_MAJOR    0 )
-set( CMAKE_PROJECT_VERSION_MINOR    0 )
-set( CMAKE_PROJECT_VERSION_PATCH    0 )
-
-find_package(Boost REQUIRED COMPONENTS filesystem program_options date_time chrono iostreams coroutine)
-find_package(Git)
-
-IF(NOT "$ENV{OPENSSL_ROOT_DIR}" STREQUAL "")
-  set(OPENSSL_ROOT_DIR $ENV{OPENSSL_ROOT_DIR} )
-  set(OPENSSL_INCLUDE_DIR ${OPENSSL_ROOT_DIR}/include)
-  message(STATUS "Setting up OpenSSL root and include vars to ${OPENSSL_ROOT_DIR}, ${OPENSSL_INCLUDE_DIR}")
-ENDIF()
-if(APPLE AND UNIX AND "${OPENSSL_ROOT_DIR}" STREQUAL "")
-   set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl@1.1")
+if(CMAKE_BINARY_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    message(FATAL_ERROR "Building in-source is not supported; create a build dir and remove ${CMAKE_SOURCE_DIR}/CMakeCache.txt and ${CMAKE_SOURCE_DIR}/CMakeFiles")
 endif()
-find_package( OpenSSL REQUIRED )
 
+if(NOT DEFINED WASI_SDK_PREFIX AND DEFINED ENV{WASI_SDK_PREFIX})
+    set(WASI_SDK_PREFIX $ENV{WASI_SDK_PREFIX})
+endif()
 
+file(WRITE ${CMAKE_BINARY_DIR}/CTestTestfile.cmake)
 
-if( APPLE )
-  # Apple Specific Options Here
+if(NOT DEFINED SKIP_NATIVE OR NOT SKIP_NATIVE)
+    ExternalProject_Add(native
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/native
+        BINARY_DIR native
+        INSTALL_COMMAND ""
+        BUILD_ALWAYS 1
+        TEST_EXCLUDE_FROM_MAIN 1
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    )
+    file(APPEND ${CMAKE_BINARY_DIR}/CTestTestfile.cmake "subdirs(\"native\")\n")
+    ExternalProject_Add_StepTargets(native test)
+endif()
 
-  # As of 10.10 yosemite, the OpenSSL static libraries shipped with os x have a dependency
-  # on zlib, so any time you link in openssl you also need to link zlib.  .  We really want to detect whether openssl was configured with the --no-zlib
-  # option or not when it was built, but that's difficult to do in practice, so we
-  # just always try to link it in on mac.
-  find_package( ZLIB REQUIRED )
-  find_library(security_framework Security)
-  find_library(corefoundation_framework CoreFoundation)
-
-
-  message( STATUS "Configuring AppBase on OS X" )
-  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-conversion -Wno-deprecated-declarations" )
-else( APPLE )
-  find_package( ZLIB )
-
-  # Linux Specific Options Here
-  message( STATUS "Configuring AppBase on Linux" )
-  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall" )
-  if ( FULL_STATIC_BUILD )
-    set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
-  endif ( FULL_STATIC_BUILD )
-endif( APPLE )
-
-if(UNIX)
-  if(APPLE)
-    set(whole_archive_flag "-force_load")
-    set(no_whole_archive_flag "")
-    set(build_id_flag "")
-  else()
-    set(whole_archive_flag "--whole-archive")
-    set(no_whole_archive_flag "--no-whole-archive")
-    set(build_id_flag "--build-id")
-  endif()
+if(DEFINED WASI_SDK_PREFIX)
+    ExternalProject_Add(wasm
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/wasm
+        BINARY_DIR wasm
+        INSTALL_COMMAND ""
+        BUILD_ALWAYS 1
+        TEST_EXCLUDE_FROM_MAIN 1
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_CURRENT_SOURCE_DIR}/wasm/toolchain.cmake
+            -DWASI_SDK_PREFIX=${WASI_SDK_PREFIX}
+            -DCMAKE_SYSROOT=${WASI_SDK_PREFIX}/share/wasi-sysroot
+    )
+    file(APPEND ${CMAKE_BINARY_DIR}/CTestTestfile.cmake "subdirs(\"wasm\")\n")
+    ExternalProject_Add_StepTargets(wasm test)
 else()
-  set(whole_archive_flag "--whole-archive")
-  set(no_whole_archive_flag "--no-whole-archive")
-  set(build_id_flag "")
+    message(WARNING "WASI_SDK_PREFIX isn't defined; skipping wasm")
 endif()
 
+########## TS PACKAGES ####################
+if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
+    add_custom_target(yarn ALL
+        DEPENDS wasm
+        COMMAND yarn
+        COMMAND CLARION_WASM_PATH=${CMAKE_BINARY_DIR}/a.wasm yarn build
+    )
 
-add_subdirectory( libraries )
-add_subdirectory( programs )
-add_subdirectory( tests )
-add_subdirectory( external )
+    add_custom_target(packages ALL
+        DEPENDS yarn
+        COMMAND rm -rf ${CMAKE_BINARY_DIR}/dist
+
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/tester
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/tester/dist/* ${CMAKE_BINARY_DIR}/dist/tester
+
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/clariond
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/* ${CMAKE_BINARY_DIR}/dist/clariond
+        COMMAND mkdir -p clariondata
+
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/pwa
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/* ${CMAKE_BINARY_DIR}/dist/pwa
+    )
+
+    add_custom_target(package-wasm
+        DEPENDS wasm
+        COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/clarion.wasm
+    )
+
+    add_custom_target(dev
+        DEPENDS yarn package-wasm
+        COMMAND CLARION_WASM_PATH=${CMAKE_BINARY_DIR}/a.wasm yarn dev --stream
+    )
+endif()
