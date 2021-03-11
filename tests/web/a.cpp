@@ -39,14 +39,31 @@ clintrinsics::Task<> testdb()
 }
 
 clintrinsics::Task<> testnet()
-{
-    auto connection = co_await clintrinsics::connect("wss://echo.websocket.org/");
-    printf(">> connection handle: %p\n", connection.handle);
-    connection.sendMessage("hey there from CLARION wasm! :)");
-    printf(">> message sent!");
-    co_await clintrinsics::later(3000); // tolerance to wait for echoed message
-    connection.close();
-    printf(">> connection closed!");
+{   
+    clintrinsics::Connection myConnection{"wss://echo.websocket.org/"};
+    myConnection.onOpen = []() {
+        printf("connection opened!\n");
+    };
+    myConnection.onMessage = [](clintrinsics::ExternalBytes data) {
+        printf("received bytes handle: %p -- size: %d\n", 
+            data.handle, (int) data.toUint8Vector().size());
+    };
+    myConnection.onClose = [](uint32_t code) {
+        printf("connection closed code: %d\n", code);
+    };
+    myConnection.onError = []() {
+        printf("connection failed with error!\n");
+    };
+    co_await myConnection.connect();
+
+    printf(">> connection handle: %p\n", myConnection.handle);
+    co_await myConnection.sendMessage("hey there from CLARION wasm! :)\n"); // todo: make send async
+    printf(">> message sent!\n");
+    
+    co_await clintrinsics::later(5000); // waits for some messages exchanges before closing it
+    
+    myConnection.close();
+    printf(">> connection closed!\n");
 }
 
 int main()

@@ -25,23 +25,25 @@ export interface ClarionDbCursor {
 
 export interface ClarionWsAdapter {
     connect: (uri: string) => Promise<WebSocket>;
+    sendMessage: (data: Uint8Array) => Promise<void>;
 }
 
 export class ClarionWebSocket implements ClarionWsAdapter {
+    websocket: WebSocket;
+
     async connect(uri: string): Promise<WebSocket> {
         return new Promise((resolve, reject) => {
-            const websocket = new WebSocket(uri);
-            websocket.onopen = () => {
-                delete websocket.onopen;
-                delete websocket.onerror;
-
-                // websocket.onclose = onClose;
-                // websocket.onmessage = onMessage;
-                // websocket.onerror = onError;
-
-                return resolve(websocket);
+            this.websocket = new WebSocket(uri);
+            this.websocket.onopen = () => {
+                this.websocket.onopen = () => null;
+                this.websocket.onerror = () => null;
+                return resolve(this.websocket);
             };
-            websocket.onerror = reject;
+            this.websocket.onerror = reject;
         });
+    }
+
+    async sendMessage(data: Uint8Array): Promise<void> {
+        this.websocket.send(data);
     }
 }

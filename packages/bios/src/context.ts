@@ -108,6 +108,25 @@ export class Context {
                     }
                 },
 
+                getObjSize(index: number) {
+                    try {
+                        context.getObj<Uint8Array>(index).length;
+                    } catch (e) {
+                        context.throwError(e);
+                    }
+                },
+
+                getObjData(index: number, dest: number) {
+                    const memory = context.instance!.exports
+                        .memory as WebAssembly.Memory;
+                    const buffer = new Uint8Array(memory.buffer);
+
+                    const obj = context.getObj<Uint8Array>(index);
+                    for (const byte of obj) {
+                        buffer[dest++] = byte;
+                    }
+                },
+
                 callmeLater(
                     delayMs: number,
                     wasmCbPtr: number,
@@ -147,12 +166,39 @@ export class Context {
                 connect: async (
                     uriPos: number,
                     uriLen: number,
+                    wasmCbOnMessagePtr: number,
+                    wasmCbOnMessageIndex: number,
+                    wasmCbOnClosePtr: number,
+                    wasmCbOnCloseIndex: number,
+                    wasmCbOnErrorPtr: number,
+                    wasmCbOnErrorIndex: number,
                     wasmCbPtr: number,
                     wasmCbIndex: number
                 ) => {
                     try {
                         const uri = context.decodeStr(uriPos, uriLen);
                         const connection = await context.ws.connect(uri);
+                        connection.onmessage = async (e: MessageEvent) => {
+                            const dataBuffer = await e.data.arrayBuffer();
+                            context.wasmCallback(
+                                wasmCbOnMessageIndex,
+                                wasmCbOnMessagePtr,
+                                context.addObj(new Uint8Array(dataBuffer))
+                            );
+                        };
+                        connection.onclose = async (e: CloseEvent) => {
+                            context.wasmCallback(
+                                wasmCbOnCloseIndex,
+                                wasmCbOnClosePtr,
+                                e.code
+                            );
+                        };
+                        connection.onerror = async (e: Event) => {
+                            context.wasmCallback(
+                                wasmCbOnErrorIndex,
+                                wasmCbOnErrorPtr
+                            );
+                        };
                         context.wasmCallback(
                             wasmCbIndex,
                             wasmCbPtr,
@@ -166,7 +212,9 @@ export class Context {
                 sendMessage: (
                     connectionIndex: number,
                     messagePos: number,
-                    messageLen: number
+                    messageLen: number,
+                    wasmCbPtr: number,
+                    wasmCbIndex: number
                 ) => {
                     try {
                         const connection = context.getObj<WebSocket>(
@@ -176,6 +224,7 @@ export class Context {
                             context.uint8Array(messagePos, messageLen)
                         );
                         connection.send(message);
+                        context.wasmCallback(wasmCbIndex, wasmCbPtr);
                     } catch (e) {
                         context.throwError(e);
                     }
