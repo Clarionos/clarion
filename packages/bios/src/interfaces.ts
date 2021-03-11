@@ -2,8 +2,8 @@
  * Clarion Interfaces
  */
 
-export interface ClarionDbAdapter {
-    open: (name: string) => Promise<any>;
+export interface ClarionDbManager {
+    open: (name: string) => Promise<any>; // todo: specify type
     createTransaction: (db: any, writable?: boolean) => ClarionDbTrx;
 }
 
@@ -23,27 +23,16 @@ export interface ClarionDbCursor {
     next: () => Promise<void>;
 }
 
-export interface ClarionWsAdapter {
-    connect: (uri: string) => Promise<WebSocket>;
+export interface ClarionConnection {
+    uri: string;
     sendMessage: (data: Uint8Array) => Promise<void>;
+    close: () => Promise<void>;
 }
-
-export class ClarionWebSocket implements ClarionWsAdapter {
-    websocket: WebSocket;
-
-    async connect(uri: string): Promise<WebSocket> {
-        return new Promise((resolve, reject) => {
-            this.websocket = new WebSocket(uri);
-            this.websocket.onopen = () => {
-                this.websocket.onopen = () => null;
-                this.websocket.onerror = () => null;
-                return resolve(this.websocket);
-            };
-            this.websocket.onerror = reject;
-        });
-    }
-
-    async sendMessage(data: Uint8Array): Promise<void> {
-        this.websocket.send(data);
-    }
+export interface ClarionConnectionManager {
+    connect: (
+        uri: string,
+        onMessage: (e: MessageEvent) => Promise<void>,
+        onClose: (e: CloseEvent) => Promise<void>,
+        onError: () => Promise<void>
+    ) => Promise<ClarionConnection>;
 }

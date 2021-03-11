@@ -1,9 +1,9 @@
 import {
-    ClarionDbAdapter,
+    ClarionConnectionManager,
+    ClarionDbManager,
     ClarionDbCursor,
     ClarionDbTrx,
-    ClarionWsAdapter,
-    ClarionWebSocket,
+    ClarionConnection,
 } from "./interfaces";
 
 export class Context {
@@ -13,13 +13,17 @@ export class Context {
     objects: any[] = [null];
     args: string[];
     encodedArgs?: Uint8Array[];
-    db: ClarionDbAdapter;
-    ws: ClarionWsAdapter;
+    dbManager: ClarionDbManager;
+    connectionManager: ClarionConnectionManager;
 
-    constructor(args: string[], db: ClarionDbAdapter) {
+    constructor(
+        args: string[],
+        dbManager: ClarionDbManager,
+        connectionManager: ClarionConnectionManager
+    ) {
         this.args = args;
-        this.db = db;
-        this.ws = new ClarionWebSocket();
+        this.dbManager = dbManager;
+        this.connectionManager = connectionManager;
     }
 
     throwError(message: string, e?: Error) {
@@ -110,7 +114,7 @@ export class Context {
 
                 getObjSize(index: number) {
                     try {
-                        context.getObj<Uint8Array>(index).length;
+                        return context.getObj<Uint8Array>(index).length;
                     } catch (e) {
                         context.throwError(e);
                     }
@@ -152,7 +156,7 @@ export class Context {
                 ) => {
                     try {
                         const dbName = context.decodeStr(pos, len);
-                        const db = await context.db.open(dbName);
+                        const db = await context.dbManager.open(dbName);
                         context.wasmCallback(
                             wasmCbIndex,
                             wasmCbPtr,
@@ -163,89 +167,14 @@ export class Context {
                     }
                 },
 
-                connect: async (
-                    uriPos: number,
-                    uriLen: number,
-                    wasmCbOnMessagePtr: number,
-                    wasmCbOnMessageIndex: number,
-                    wasmCbOnClosePtr: number,
-                    wasmCbOnCloseIndex: number,
-                    wasmCbOnErrorPtr: number,
-                    wasmCbOnErrorIndex: number,
-                    wasmCbPtr: number,
-                    wasmCbIndex: number
-                ) => {
-                    try {
-                        const uri = context.decodeStr(uriPos, uriLen);
-                        const connection = await context.ws.connect(uri);
-                        connection.onmessage = async (e: MessageEvent) => {
-                            const dataBuffer = await e.data.arrayBuffer();
-                            context.wasmCallback(
-                                wasmCbOnMessageIndex,
-                                wasmCbOnMessagePtr,
-                                context.addObj(new Uint8Array(dataBuffer))
-                            );
-                        };
-                        connection.onclose = async (e: CloseEvent) => {
-                            context.wasmCallback(
-                                wasmCbOnCloseIndex,
-                                wasmCbOnClosePtr,
-                                e.code
-                            );
-                        };
-                        connection.onerror = async (e: Event) => {
-                            context.wasmCallback(
-                                wasmCbOnErrorIndex,
-                                wasmCbOnErrorPtr
-                            );
-                        };
-                        context.wasmCallback(
-                            wasmCbIndex,
-                            wasmCbPtr,
-                            context.addObj(connection)
-                        );
-                    } catch (e) {
-                        context.throwError(e);
-                    }
-                },
-
-                sendMessage: (
-                    connectionIndex: number,
-                    messagePos: number,
-                    messageLen: number,
-                    wasmCbPtr: number,
-                    wasmCbIndex: number
-                ) => {
-                    try {
-                        const connection = context.getObj<WebSocket>(
-                            connectionIndex
-                        );
-                        const message = new Uint8Array(
-                            context.uint8Array(messagePos, messageLen)
-                        );
-                        connection.send(message);
-                        context.wasmCallback(wasmCbIndex, wasmCbPtr);
-                    } catch (e) {
-                        context.throwError(e);
-                    }
-                },
-
-                close: (connectionIndex: number) => {
-                    try {
-                        const connection = context.getObj<WebSocket>(
-                            connectionIndex
-                        );
-                        connection.close();
-                    } catch (e) {
-                        context.throwError(e);
-                    }
-                },
-
                 // TODO: automatically abort transactions which aren't committed?
                 // TODO: give this an async interface?
                 createTransaction: (dbIndex: number, writable: boolean) => {
-                    const db = context.getObj<ClarionDbAdapter>(dbIndex);
-                    const trx = context.db!.createTransaction(db, writable);
+                    const db = context.getObj<any>(dbIndex);
+                    const trx = context.dbManager.createTransaction(
+                        db,
+                        writable
+                    );
                     return context.addObj(trx);
                 },
 
@@ -344,6 +273,87 @@ export class Context {
                             "fail to advance cursor to next position",
                             e
                         );
+                    }
+                },
+
+                connect: async (
+                    uriPos: number,
+                    uriLen: number,
+                    wasmCbOnMessagePtr: number,
+                    wasmCbOnMessageIndex: number,
+                    wasmCbOnClosePtr: number,
+                    wasmCbOnCloseIndex: number,
+                    wasmCbOnErrorPtr: number,
+                    wasmCbOnErrorIndex: number,
+                    wasmCbPtr: number,
+                    wasmCbIndex: number
+                ) => {
+                    try {
+                        const uri = context.decodeStr(uriPos, uriLen);
+                        const connection = await context.connectionManager.connect(
+                            uri,
+                            async (e: MessageEvent) => {
+                                const dataBuffer = await e.data.arrayBuffer();
+                                console.info("data is ", dataBuffer);
+                                context.wasmCallback(
+                                    wasmCbOnMessageIndex,
+                                    wasmCbOnMessagePtr,
+                                    context.addObj(new Uint8Array(dataBuffer))
+                                );
+                            },
+                            async (e: CloseEvent) => {
+                                context.wasmCallback(
+                                    wasmCbOnCloseIndex,
+                                    wasmCbOnClosePtr,
+                                    e.code
+                                );
+                            },
+                            async () => {
+                                context.wasmCallback(
+                                    wasmCbOnErrorIndex,
+                                    wasmCbOnErrorPtr
+                                );
+                            }
+                        );
+                        context.wasmCallback(
+                            wasmCbIndex,
+                            wasmCbPtr,
+                            context.addObj(connection)
+                        );
+                    } catch (e) {
+                        context.throwError(e);
+                    }
+                },
+
+                sendMessage: async (
+                    connectionIndex: number,
+                    messagePos: number,
+                    messageLen: number,
+                    wasmCbPtr: number,
+                    wasmCbIndex: number
+                ) => {
+                    try {
+                        const connection = context.getObj<ClarionConnection>(
+                            connectionIndex
+                        );
+                        const message = new Uint8Array(
+                            context.uint8Array(messagePos, messageLen)
+                        );
+                        await connection.sendMessage(message);
+                        context.wasmCallback(wasmCbIndex, wasmCbPtr);
+                    } catch (e) {
+                        context.throwError(e);
+                    }
+                },
+
+                close: (connectionIndex: number) => {
+                    try {
+                        const connection = context.getObj<WebSocket>(
+                            connectionIndex
+                        );
+                        connection.close();
+                    } catch (e) {
+                        context.throwError(e);
                     }
                 },
             },

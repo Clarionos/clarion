@@ -1,6 +1,7 @@
 import { Context } from "@clarionos/bios";
 
 import { ClarionDb } from "./db";
+import { ClarionConnectionCreator } from "./websocket";
 
 const wasmFilePath = "/clarion.wasm";
 let context: Context;
@@ -11,8 +12,13 @@ export const getContext = async (): Promise<Context> => {
         const response = await fetch(wasmFilePath);
         const wasmBytes = new Uint8Array(await response.arrayBuffer());
 
-        const clarionDb = new ClarionDb();
-        context = new Context(["clarion.wasm"], clarionDb as any);
+        const clarionDbManager = new ClarionDb();
+        const clarionConnectionManager = new ClarionConnectionCreator();
+        context = new Context(
+            ["clarion.wasm"],
+            clarionDbManager,
+            clarionConnectionManager
+        );
         await context.instanciate(wasmBytes);
     }
     return context;
