@@ -37,7 +37,7 @@ export class ArgsHandler {
     };
 
     imports = {
-        get_arg_counts: this.get_arg_counts,
-        get_args: this.get_args,
+        get_arg_counts: this.get_arg_counts.bind(this),
+        get_args: this.get_args.bind(this),
     };
 }

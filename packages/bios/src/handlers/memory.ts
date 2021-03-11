@@ -28,16 +28,16 @@ export class MemoryHandler {
         return new TextDecoder().decode(data);
     };
 
-    addObj(obj: any) {
+    addObj = (obj: any) => {
         this.objects.push(obj);
         return this.objects.length - 1;
-    }
+    };
 
-    getObj<T>(index: number) {
+    getObj = <T>(index: number) => {
         return this.objects[index] as T;
-    }
+    };
 
-    wasmCallback(fnIndex: number, ...params: any): any {
+    wasmCallback = (fnIndex: number, ...params: any): void => {
         const fnTable = this.instance.exports
             .__indirect_function_table as WebAssembly.Table;
         const fn = fnTable.get(fnIndex);
@@ -45,5 +45,5 @@ export class MemoryHandler {
             return throwError("Invalid WASM table function");
         }
         return fn(...params);
-    }
+    };
 }

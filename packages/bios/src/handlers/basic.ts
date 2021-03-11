@@ -52,11 +52,11 @@ export class BasicHandler {
     };
 
     imports = {
-        console: this.console,
-        getObjSize: this.getObjSize,
-        getObjData: this.getObjData,
-        releaseObject: this.releaseObject,
-        callmeLater: this.callmeLater,
-        exit: this.exit,
+        console: this.console.bind(this),
+        getObjSize: this.getObjSize.bind(this),
+        getObjData: this.getObjData.bind(this),
+        releaseObject: this.releaseObject.bind(this),
+        callmeLater: this.callmeLater.bind(this),
+        exit: this.exit.bind(this),
     };
 }

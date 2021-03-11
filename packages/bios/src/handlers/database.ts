@@ -130,14 +130,14 @@ export class DatabaseHandler {
     };
 
     imports = {
-        openDb: this.openDb,
-        createTransaction: this.createTransaction,
-        abortTransaction: this.abortTransaction,
-        commitTransaction: this.commitTransaction,
-        setKV: this.setKV,
-        createCursor: this.createCursor,
-        cursorHasValue: this.cursorHasValue,
-        cursorValue: this.cursorValue,
-        cursorNext: this.cursorNext,
+        openDb: this.openDb.bind(this),
+        createTransaction: this.createTransaction.bind(this),
+        abortTransaction: this.abortTransaction.bind(this),
+        commitTransaction: this.commitTransaction.bind(this),
+        setKV: this.setKV.bind(this),
+        createCursor: this.createCursor.bind(this),
+        cursorHasValue: this.cursorHasValue.bind(this),
+        cursorValue: this.cursorValue.bind(this),
+        cursorNext: this.cursorNext.bind(this),
     };
 }

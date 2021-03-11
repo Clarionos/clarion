@@ -95,8 +95,8 @@ export class ConnectionHandler {
     };
 
     imports = {
-        connect: this.connect,
-        sendMessage: this.sendMessage,
-        close: this.close,
+        connect: this.connect.bind(this),
+        sendMessage: this.sendMessage.bind(this),
+        close: this.close.bind(this),
     };
 }
