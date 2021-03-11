@@ -1,5 +1,5 @@
 import {
-    ClarionDbAdapter,
+    ClarionDbManager,
     ClarionDbCursor,
     ClarionDbTrx,
 } from "@clarionos/bios";
@@ -8,7 +8,7 @@ const DATABASE_OBJECTSTORE = "clarion";
 const DATABASE_KEYPATH = "k";
 const DATABASE_VALUEPATH = "v";
 
-export class ClarionDb implements ClarionDbAdapter {
+export class ClarionDb implements ClarionDbManager {
     open(name) {
         return new Promise((resolve, reject) => {
             const req = indexedDB.open(name, 1);

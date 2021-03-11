@@ -2,8 +2,8 @@
  * Clarion Interfaces
  */
 
-export interface ClarionDbAdapter {
-    open: (name: string) => Promise<any>;
+export interface ClarionDbManager {
+    open: (name: string) => Promise<any>; // todo: specify type
     createTransaction: (db: any, writable?: boolean) => ClarionDbTrx;
 }
 
@@ -21,4 +21,18 @@ export interface ClarionDbCursor {
     getValue: () => Uint8Array;
     hasValue: () => boolean;
     next: () => Promise<void>;
+}
+
+export interface ClarionConnection {
+    uri: string;
+    sendMessage: (data: Uint8Array) => Promise<void>;
+    close: () => Promise<void>;
+}
+export interface ClarionConnectionManager {
+    connect: (
+        uri: string,
+        onMessage: (e: MessageEvent) => Promise<void>,
+        onClose: (e: CloseEvent) => Promise<void>,
+        onError: () => Promise<void>
+    ) => Promise<ClarionConnection>;
 }

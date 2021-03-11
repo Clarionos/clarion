@@ -3,6 +3,7 @@
 #include "clintrinsics/coroutines.hpp"
 
 #include <cstring>
+#include <vector>
 
 namespace clintrinsics
 {
@@ -54,6 +55,26 @@ namespace clintrinsics
             handle = src.handle;
             src.handle = nullptr;
             return *this;
+        }
+    };
+
+    struct BytesTag;
+
+    namespace imports
+    {
+        [[clang::import_module("clarion"), clang::import_name("getObjSize")]] uint32_t getObjSize(BytesTag *index);
+
+        [[clang::import_module("clarion"), clang::import_name("getObjData")]] void getObjData(BytesTag *index, void *dest);
+    }
+
+    struct ExternalBytes : ExternalObject<BytesTag>
+    {
+        std::vector<uint8_t> toUint8Vector()
+        {
+            auto size = imports::getObjSize(handle);
+            std::vector<uint8_t> data(size);
+            imports::getObjData(handle, data.data());
+            return data;
         }
     };
 }

@@ -1,4 +1,5 @@
 #include "clintrinsics/database.hpp"
+#include "clintrinsics/connection.hpp"
 
 #include <string>
 
@@ -37,6 +38,34 @@ clintrinsics::Task<> testdb()
     trx.commit();
 }
 
+clintrinsics::Task<> testnet()
+{
+    clintrinsics::Connection myConnection{"wss://echo.websocket.org/"};
+    myConnection.onOpen = []() {
+        printf("connection opened!\n");
+    };
+    myConnection.onMessage = [](clintrinsics::ExternalBytes data) {
+        printf("received bytes handle: %p -- size: %d\n",
+            data.handle, (int) data.toUint8Vector().size());
+    };
+    myConnection.onClose = [](uint32_t code) {
+        printf("connection closed code: %d\n", code);
+    };
+    myConnection.onError = []() {
+        printf("connection failed with error!\n");
+    };
+    co_await myConnection.connect();
+
+    printf(">> connection handle: %p\n", myConnection.handle);
+    co_await myConnection.sendMessage("hey there from CLARION wasm! :)\n"); // todo: make send async
+    printf(">> message sent!\n");
+
+    co_await clintrinsics::later(5000); // waits for some messages exchanges before closing it
+
+    myConnection.close();
+    printf(">> connection closed!\n");
+}
+
 int main()
 {
     printf("starting coroutines...\n");
@@ -46,5 +75,6 @@ int main()
     // testco2(200).start();
     // testco2(250).start();
     testdb().start();
+    testnet().start();
     printf("main returned\n");
 }
