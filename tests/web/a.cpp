@@ -1,5 +1,5 @@
 #include "clintrinsics/database.hpp"
-#include "clintrinsics/net.hpp"
+#include "clintrinsics/connection.hpp"
 
 #include <string>
 
@@ -39,13 +39,13 @@ clintrinsics::Task<> testdb()
 }
 
 clintrinsics::Task<> testnet()
-{   
+{
     clintrinsics::Connection myConnection{"wss://echo.websocket.org/"};
     myConnection.onOpen = []() {
         printf("connection opened!\n");
     };
     myConnection.onMessage = [](clintrinsics::ExternalBytes data) {
-        printf("received bytes handle: %p -- size: %d\n", 
+        printf("received bytes handle: %p -- size: %d\n",
             data.handle, (int) data.toUint8Vector().size());
     };
     myConnection.onClose = [](uint32_t code) {
@@ -59,9 +59,9 @@ clintrinsics::Task<> testnet()
     printf(">> connection handle: %p\n", myConnection.handle);
     co_await myConnection.sendMessage("hey there from CLARION wasm! :)\n"); // todo: make send async
     printf(">> message sent!\n");
-    
+
     co_await clintrinsics::later(5000); // waits for some messages exchanges before closing it
-    
+
     myConnection.close();
     printf(">> connection closed!\n");
 }
