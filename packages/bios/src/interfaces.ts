@@ -31,8 +31,8 @@ export interface ClarionConnection {
 export interface ClarionConnectionManager {
     connect: (
         uri: string,
-        onMessage: (e: MessageEvent) => Promise<void>,
-        onClose: (e: CloseEvent) => Promise<void>,
+        onMessage: (data: Uint8Array) => Promise<void>,
+        onClose: (code: number, reason?: string) => Promise<void>,
         onError: () => Promise<void>
     ) => Promise<ClarionConnection>;
 }

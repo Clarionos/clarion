@@ -40,7 +40,7 @@ clintrinsics::Task<> testdb()
 
 clintrinsics::Task<> testnet()
 {
-    clintrinsics::Connection myConnection{"wss://echo.websocket.org/"};
+    clintrinsics::Connection myConnection{"ws://localhost:8080"};
     myConnection.onOpen = []() {
         printf("connection opened!\n");
     };

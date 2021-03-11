@@ -1,8 +1,8 @@
-import { ClarionDbAdapter, ClarionDbTrx } from "@clarionos/bios";
+import { ClarionDbManager, ClarionDbTrx } from "@clarionos/bios";
 
 import { ClarionTrx } from "./trx";
 
-export class ClarionDb implements ClarionDbAdapter {
+export class ClarionDb implements ClarionDbManager {
     lmdbEnv: any;
     dbs: any[];
 

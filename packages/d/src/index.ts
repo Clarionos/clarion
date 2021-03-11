@@ -1,10 +1,17 @@
 // import * as Level from "level";
 import * as lmdb from "node-lmdb";
 import { readFileSync } from "fs";
-import { ClarionDbAdapter, Context } from "@clarionos/bios";
+import {
+    ClarionConnectionManager,
+    ClarionDbManager,
+    Context,
+} from "@clarionos/bios";
 
-import { DATABASE, CLARION_WASM_PATH } from "./config";
+import { DATABASE, CLARION_WASM_PATH, SERVER_PORT } from "./config";
 import { ClarionDb } from "./db";
+import { ClarionServer } from "./connection";
+
+const server = new ClarionServer(parseInt(SERVER_PORT));
 
 let lmdbEnv = new lmdb.Env();
 
@@ -12,7 +19,7 @@ const main = async () => {
     console.info("> Initializing Clarion...");
     const db = initDb();
 
-    await loadClarion(db);
+    await loadClarion(db, server);
     console.info("> Clarion WASM was loaded");
 
     // tolerance time since everything is async and we need to give time for
@@ -33,9 +40,12 @@ const initDb = (): ClarionDb => {
     return new ClarionDb(lmdbEnv);
 };
 
-const loadClarion = async (db: ClarionDbAdapter) => {
+const loadClarion = async (
+    dbManager: ClarionDbManager,
+    connManager: ClarionConnectionManager
+) => {
     const clarionWasm = readFileSync(CLARION_WASM_PATH);
-    const context = new Context(["wasm"], db);
+    const context = new Context(["wasm"], dbManager, connManager);
     await context.instanciate(clarionWasm);
     (context.instance!.exports._start as Function)();
 };

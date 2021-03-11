@@ -14,16 +14,20 @@
         "prepublishOnly": "yarn run build",
         "lint": "eslint --ext .js,.ts src",
         "test": "yarn run build",
-        "start": "ts-node src/index.ts"
+        "start": "ts-node-dev -r tsconfig-paths/register src/index.ts"
     },
     "devDependencies": {
         "@types/node": "^14.14.32",
+        "@types/ws": "^7.4.0",
         "rimraf": "~3.0.2",
         "ts-node": "^9.1.1",
+        "ts-node-dev": "^1.1.6",
+        "tsconfig-paths": "^3.9.0",
         "typescript": "~4.2.0"
     },
     "dependencies": {
         "@clarionos/bios": "^0.1.0",
-        "node-lmdb": "^0.9.4"
+        "node-lmdb": "^0.9.4",
+        "ws": "^7.4.4"
     }
 }

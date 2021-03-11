@@ -30,28 +30,31 @@ export class ConnectionHandler {
             const uri = this.memoryHandler.decodeStr(uriPos, uriLen);
             const connection = await this.connectionManager.connect(
                 uri,
-                async (e: MessageEvent) => {
-                    const dataBuffer = await e.data.arrayBuffer();
+                async (data: Uint8Array) => {
+                    console.info("connection.data", data);
                     this.memoryHandler.wasmCallback(
                         wasmCbOnMessageIndex,
                         wasmCbOnMessagePtr,
-                        this.memoryHandler.addObj(new Uint8Array(dataBuffer))
+                        this.memoryHandler.addObj(data)
                     );
                 },
-                async (e: CloseEvent) => {
+                async (code) => {
+                    console.info("connection.close", code);
                     this.memoryHandler.wasmCallback(
                         wasmCbOnCloseIndex,
                         wasmCbOnClosePtr,
-                        e.code
+                        code
                     );
                 },
                 async () => {
+                    console.info("connection.error");
                     this.memoryHandler.wasmCallback(
                         wasmCbOnErrorIndex,
                         wasmCbOnErrorPtr
                     );
                 }
             );
+            console.info("connection.wasmcallback");
             this.memoryHandler.wasmCallback(
                 wasmCbIndex,
                 wasmCbPtr,

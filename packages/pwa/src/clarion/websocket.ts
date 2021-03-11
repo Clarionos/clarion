@@ -19,20 +19,35 @@ export class ClarionWebSocket implements ClarionConnection {
 }
 
 export class ClarionConnectionCreator implements ClarionConnectionManager {
-    websocket: WebSocket;
-
     async connect(
         uri: string,
-        onMessage: (e: MessageEvent<any>) => Promise<void>,
-        onClose: (e: CloseEvent) => Promise<void>,
+        onMessage: (data: Uint8Array) => Promise<void>,
+        onClose: (code: number, reason?: string) => Promise<void>,
         onError: () => Promise<void>
     ): Promise<ClarionWebSocket> {
         return new Promise((resolve, reject) => {
             const websocket = new WebSocket(uri);
             websocket.onopen = () => {
                 websocket.onopen = () => null;
-                websocket.onmessage = onMessage;
-                websocket.onclose = onClose;
+                websocket.onmessage = async (e: MessageEvent) => {
+                    try {
+                        let bytes: Uint8Array;
+                        if (typeof e.data === "string") {
+                            bytes = new TextEncoder().encode(e.data);
+                        } else {
+                            const dataBuffer = await (e.data as Blob).arrayBuffer();
+                            bytes = new Uint8Array(dataBuffer);
+                        }
+                        console.info("received data ", e.data);
+                        onMessage(bytes);
+                    } catch (e) {
+                        console.error(
+                            "!!! Unknown message data type to handle",
+                            e
+                        );
+                    }
+                };
+                websocket.onclose = (e) => onClose(e.code, e.reason);
                 websocket.onerror = onError;
                 return resolve(new ClarionWebSocket(websocket));
             };
