@@ -31,7 +31,6 @@ export class ConnectionHandler {
             const connection = await this.connectionManager.connect(
                 uri,
                 async (data: Uint8Array) => {
-                    console.info("connection.data", data);
                     this.memoryHandler.wasmCallback(
                         wasmCbOnMessageIndex,
                         wasmCbOnMessagePtr,
@@ -39,7 +38,6 @@ export class ConnectionHandler {
                     );
                 },
                 async (code) => {
-                    console.info("connection.close", code);
                     this.memoryHandler.wasmCallback(
                         wasmCbOnCloseIndex,
                         wasmCbOnClosePtr,
@@ -47,14 +45,12 @@ export class ConnectionHandler {
                     );
                 },
                 async () => {
-                    console.info("connection.error");
                     this.memoryHandler.wasmCallback(
                         wasmCbOnErrorIndex,
                         wasmCbOnErrorPtr
                     );
                 }
             );
-            console.info("connection.wasmcallback");
             this.memoryHandler.wasmCallback(
                 wasmCbIndex,
                 wasmCbPtr,

@@ -13,15 +13,11 @@ namespace clintrinsics
 
     namespace imports
     {
-        [[clang::import_module("clarion"), clang::import_name("openDb")]] void openDb(const char *name, uint32_t len, void *p, void (*f)(void *p, DBTag *db));
-        [[clang::import_module("clarion"), clang::import_name("createTransaction")]] TrxTag *createTransaction(DBTag *db, bool writable);
-        [[clang::import_module("clarion"), clang::import_name("abortTransaction")]] void abortTransaction(TrxTag *trx);
-        [[clang::import_module("clarion"), clang::import_name("commitTransaction")]] void commitTransaction(TrxTag *trx);
-        [[clang::import_module("clarion"), clang::import_name("setKV")]] void setKV(TrxTag *trx, const void *key, uint32_t keyLen, const void *value, uint32_t valueLen, void *p, void (*f)(void *p));
         [[clang::import_module("clarion"), clang::import_name("createCursor")]] void createCursor(TrxTag *trx, void *p, void (*f)(void *p, CursorTag *cursor));
         [[clang::import_module("clarion"), clang::import_name("cursorHasValue")]] bool cursorHasValue(CursorTag *cursor);
         [[clang::import_module("clarion"), clang::import_name("cursorValue")]] BlobTag *cursorValue(CursorTag *cursor);
         [[clang::import_module("clarion"), clang::import_name("cursorNext")]] void cursorNext(CursorTag *cursor, void *p, void (*f)(void *p));
+        [[clang::import_module("clarion"), clang::import_name("closeCursor")]] void closeCursor(CursorTag *cursor);
     } // namespace imports
 
     struct KVRange : ExternalObject<CursorTag>
@@ -47,6 +43,13 @@ namespace clintrinsics
         NoWait<iterator> begin() { return iterator{*this}; }
         end_iterator end() { return {}; }
     };
+
+    namespace imports
+    {
+        [[clang::import_module("clarion"), clang::import_name("abortTransaction")]] void abortTransaction(TrxTag *trx);
+        [[clang::import_module("clarion"), clang::import_name("commitTransaction")]] void commitTransaction(TrxTag *trx);
+        [[clang::import_module("clarion"), clang::import_name("setKV")]] void setKV(TrxTag *trx, const void *key, uint32_t keyLen, const void *value, uint32_t valueLen, void *p, void (*f)(void *p));
+    } // namespace imports
 
     struct transaction : ExternalObject<TrxTag>
     {
@@ -84,6 +87,13 @@ namespace clintrinsics
         }
     }; // transaction
 
+    namespace imports
+    {
+        [[clang::import_module("clarion"), clang::import_name("openDb")]] void openDb(const char *name, uint32_t len, void *p, void (*f)(void *p, DBTag *db));
+        [[clang::import_module("clarion"), clang::import_name("createTransaction")]] TrxTag *createTransaction(DBTag *db, bool writable);
+        [[clang::import_module("clarion"), clang::import_name("closeDatabase")]] void closeDatabase(DBTag *db);
+    } // namespace imports
+
     struct database : ExternalObject<DBTag>
     {
         using ExternalObject<DBTag>::ExternalObject;
@@ -91,6 +101,11 @@ namespace clintrinsics
         transaction createTransaction(bool writable)
         {
             return {imports::createTransaction(handle, writable)};
+        }
+
+        void close()
+        {
+            imports::closeDatabase(handle);
         }
     };
 

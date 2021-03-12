@@ -36,6 +36,7 @@ clintrinsics::Task<> testdb()
         printf("... blob handle %p\n", x.handle);
 
     trx.commit();
+    db.close();
 }
 
 clintrinsics::Task<> testnet()

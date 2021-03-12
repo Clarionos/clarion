@@ -40,8 +40,6 @@ export class ClarionServer implements ClarionConnectionManager {
 
     constructor(port: number) {
         this.server = new WebSocket.Server({ port });
-        this.server.on("connection", this.handleServerConnection);
-        this.printServerStats();
     }
 
     connect = async (
@@ -51,32 +49,38 @@ export class ClarionServer implements ClarionConnectionManager {
         onError: () => Promise<void>
     ): Promise<ClarionWebSocket> => {
         return new Promise((resolve, reject) => {
-            console.info(">>> ws new connection! connecting to", uri);
-            const websocket = new WebSocket(uri);
-            websocket.on("open", () => {
-                console.info(uri, "ws connected!");
-                websocket.on("open", () => null);
-                websocket.on("error", onError);
-                return resolve(new ClarionWebSocket(websocket));
-            });
-            websocket.on("message", async (data: Buffer | string) => {
-                try {
-                    let bytes: Uint8Array;
-                    if (typeof data === "string") {
-                        bytes = new TextEncoder().encode(data);
-                    } else {
-                        bytes = new Uint8Array(data);
+            try {
+                console.info(">>> ws new connection! connecting to", uri);
+                const websocket = new WebSocket(uri);
+                websocket.on("message", async (data: Buffer | string) => {
+                    try {
+                        let bytes: Uint8Array;
+                        if (typeof data === "string") {
+                            bytes = new TextEncoder().encode(data);
+                        } else {
+                            bytes = new Uint8Array(data);
+                        }
+                        console.info("received data ", data);
+                        onMessage(bytes);
+                    } catch (e) {
+                        console.error(
+                            "!!! Unknown message data type to handle",
+                            e
+                        );
                     }
-                    console.info("received data ", data);
-                    onMessage(bytes);
-                } catch (e) {
-                    console.error("!!! Unknown message data type to handle", e);
-                }
-            });
-            websocket.on("close", () =>
-                onClose({ code: 1, reason: "connection closed" } as any)
-            );
-            websocket.on("error", reject);
+                });
+                websocket.on("close", () =>
+                    onClose({ code: 1, reason: "connection closed" } as any)
+                );
+                websocket.on("error", onError);
+                websocket.on("open", () => {
+                    console.info(uri, "ws connected!");
+                    websocket.on("open", () => null);
+                    return resolve(new ClarionWebSocket(websocket));
+                });
+            } catch (e) {
+                reject(e);
+            }
         });
     };
 
@@ -103,10 +107,22 @@ export class ClarionServer implements ClarionConnectionManager {
         });
 
         ws.on("close", () => {
+            console.info("connection closed:", this.connectionInfo(wsId));
+            delete this.connections[wsId];
+        });
+
+        ws.on("error", (error) => {
+            console.error("error on connection", wsId, error);
             delete this.connections[wsId];
         });
 
         ws.send(">>> WELCOME TO CLARIOND SERVER!");
+    };
+
+    connectionInfo = (key: string) => {
+        return `${key} ${
+            this.connections[key].remoteAddress
+        } ${this.connections[key].connectedAt.toISOString()}`;
     };
 
     printServerStats = () => {
@@ -116,13 +132,13 @@ export class ClarionServer implements ClarionConnectionManager {
             }`
         );
         for (const key in this.connections) {
-            console.info(
-                ">>> ",
-                key,
-                this.connections[key].remoteAddress,
-                this.connections[key].connectedAt
-            );
+            console.info(">>> ", this.connectionInfo(key));
         }
-        setTimeout(this.printServerStats, 5000);
+    };
+
+    listen = () => {
+        console.info("ClarionD listening on port ", this.server.options.port);
+        setInterval(this.printServerStats, 1500);
+        return this.server.on("connection", this.handleServerConnection);
     };
 }

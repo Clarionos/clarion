@@ -45,6 +45,10 @@ export class ClarionCursor implements ClarionDbCursor {
         return this.key;
     }
 
+    async close() {
+        this.cursor.close();
+    }
+
     private setKey(key: any): void {
         if (key) {
             this.key = new Uint8Array(key);

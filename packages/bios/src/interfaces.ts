@@ -5,6 +5,7 @@
 export interface ClarionDbManager {
     open: (name: string) => Promise<any>; // todo: specify type
     createTransaction: (db: any, writable?: boolean) => ClarionDbTrx;
+    close: (db: any) => Promise<void>;
 }
 
 export interface ClarionDbTrx {
@@ -21,6 +22,7 @@ export interface ClarionDbCursor {
     getValue: () => Uint8Array;
     hasValue: () => boolean;
     next: () => Promise<void>;
+    close: () => Promise<void>;
 }
 
 export interface ClarionConnection {

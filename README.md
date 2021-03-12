@@ -18,9 +18,9 @@ make -j
 ctest -j10
 CLARION_WASM_PATH=a.wasm node dist/clariond
 
-# to run the dev environment and watch the pwa
+# to run the dev environment (it spins up and watches the PWA and ClarionD)
 make dev
-# and then open http://localhost:9025
+# open your browser on http://localhost:9025
 ```
 
 ## Ubuntu 20.04

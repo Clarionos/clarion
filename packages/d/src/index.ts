@@ -1,5 +1,3 @@
-// import * as Level from "level";
-import * as lmdb from "node-lmdb";
 import { readFileSync } from "fs";
 import {
     ClarionConnectionManager,
@@ -7,37 +5,25 @@ import {
     Context,
 } from "@clarionos/bios";
 
-import { DATABASE, CLARION_WASM_PATH, SERVER_PORT } from "./config";
-import { ClarionDb } from "./db";
+import { CLARION_WASM_PATH, SERVER_PORT } from "./config";
+import { DbManager } from "./db";
 import { ClarionServer } from "./connection";
 
+let clarionContext;
 const server = new ClarionServer(parseInt(SERVER_PORT));
-
-let lmdbEnv = new lmdb.Env();
+const dbManager = new DbManager();
 
 const main = async () => {
     console.info("> Initializing Clarion...");
-    const db = initDb();
 
-    await loadClarion(db, server);
+    await loadClarion(dbManager, server);
     console.info("> Clarion WASM was loaded");
 
     // tolerance time since everything is async and we need to give time for
     // completing the wasm actions
     setTimeout(async () => {
-        await db.printStats("foo");
-        db.closeDbs();
-        lmdbEnv.close();
+        await dbManager.printStats("foo");
     }, 1500);
-};
-
-const initDb = (): ClarionDb => {
-    lmdbEnv.open({
-        path: DATABASE,
-        mapSize: 20 * 1024 * 1024 * 1024, // maximum database size
-        maxDbs: 99,
-    });
-    return new ClarionDb(lmdbEnv);
 };
 
 const loadClarion = async (
@@ -45,9 +31,28 @@ const loadClarion = async (
     connManager: ClarionConnectionManager
 ) => {
     const clarionWasm = readFileSync(CLARION_WASM_PATH);
-    const context = new Context(["wasm"], dbManager, connManager);
-    await context.instanciate(clarionWasm);
-    (context.instance!.exports._start as Function)();
+    clarionContext = new Context(["wasm"], dbManager, connManager);
+    await clarionContext.instanciate(clarionWasm);
+    (clarionContext.instance!.exports._start as Function)();
 };
 
 main();
+server.listen();
+
+const exitHandler = (exit: boolean) => {
+    if (exit) {
+        process.exit();
+    } else {
+        console.info("Closing server...");
+        dbManager.closeAll();
+    }
+};
+
+process.on("exit", () => exitHandler(false));
+[
+    `SIGINT`,
+    `SIGUSR1`,
+    `SIGUSR2`,
+    `uncaughtException`,
+    `SIGTERM`,
+].forEach((signal) => process.on(signal, () => exitHandler(true)));

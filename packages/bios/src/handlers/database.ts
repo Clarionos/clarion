@@ -30,6 +30,11 @@ export class DatabaseHandler {
         }
     };
 
+    closeDatabase = async (dbIndex: number) => {
+        const db = this.memoryHandler.getObj<any>(dbIndex);
+        await this.dbManager.close(db);
+    };
+
     createTransaction = (dbIndex: number, writable: boolean) => {
         const db = this.memoryHandler.getObj<any>(dbIndex);
         const trx = this.dbManager.createTransaction(db, writable);
@@ -129,8 +134,13 @@ export class DatabaseHandler {
         }
     };
 
+    closeCursor = (cursorIndex: number) => {
+        this.memoryHandler.getObj<ClarionDbCursor>(cursorIndex).close();
+    };
+
     imports = {
         openDb: this.openDb.bind(this),
+        closeDatabase: this.closeDatabase.bind(this),
         createTransaction: this.createTransaction.bind(this),
         abortTransaction: this.abortTransaction.bind(this),
         commitTransaction: this.commitTransaction.bind(this),
@@ -139,5 +149,6 @@ export class DatabaseHandler {
         cursorHasValue: this.cursorHasValue.bind(this),
         cursorValue: this.cursorValue.bind(this),
         cursorNext: this.cursorNext.bind(this),
+        closeCursor: this.closeCursor.bind(this),
     };
 }

@@ -1,9 +1,10 @@
-import { ClarionDbCursor, ClarionDbTrx } from "@clarionos/bios";
+import { ClarionDbTrx } from "@clarionos/bios";
 import { ClarionCursor } from "./cursor";
 
 export class ClarionTrx implements ClarionDbTrx {
     txn: any;
     db: any;
+    cursors: ClarionCursor[] = [];
 
     constructor(lmdbEnv: any, db: any, writable: boolean) {
         this.db = db;
@@ -11,10 +12,12 @@ export class ClarionTrx implements ClarionDbTrx {
     }
 
     commit() {
+        this.releaseCursors();
         return this.txn.commit();
     }
 
     abort() {
+        this.releaseCursors();
         return this.txn.abort();
     }
 
@@ -35,8 +38,14 @@ export class ClarionTrx implements ClarionDbTrx {
         return new Uint8Array(value);
     }
 
-    async createCursor(): Promise<ClarionDbCursor> {
+    async createCursor(): Promise<ClarionCursor> {
         const cursor = new ClarionCursor(this.txn, this.db);
+        this.cursors.push(cursor);
         return cursor;
     }
+
+    releaseCursors = () => {
+        // todo: need to check for closed cursors...
+        this.cursors.forEach((cursor) => cursor.close());
+    };
 }

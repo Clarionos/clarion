@@ -24,6 +24,10 @@ export class ClarionDb implements ClarionDbManager {
     createTransaction(db, writable = false) {
         return new ClarionTrx(db, writable);
     }
+
+    close = async (db) => {
+        console.info("closing database", db);
+    };
 }
 
 export class ClarionTrx implements ClarionDbTrx {
@@ -107,6 +111,10 @@ export class ClarionCursor implements ClarionDbCursor {
             this.cursor.result.continue();
         });
     }
+
+    close = async () => {
+        console.info("closing cursor", this.cursor);
+    };
 
     static async build(objectStore): Promise<ClarionCursor> {
         return new Promise((resolve, reject) => {
