@@ -61,7 +61,13 @@ clintrinsics::Task<> testnet()
    printf(">> connection closed!\n");
 }
 
-// shared_ptr<Acceptor> globalAcceptor;
+int counter = 0;
+
+[[clang::export_name("incrementCounter")]] void incrementCounter(int n)
+{
+   counter += n;
+   printf("counter is %d\n", counter);
+}
 
 int main()
 {
@@ -72,7 +78,9 @@ int main()
    //    c->sendMessage("hello World");
    // } a->onError = [](message) {
    //    printf("server connections not supported: ", )
-   // } a->listen(port, proto);
+   // }
+
+   // a->listen(port, proto);
 
    // testco("delay 1s", 1000).start();
    // testco("delay 2s", 2000).start();
@@ -82,4 +90,7 @@ int main()
    testdb().start();
    testnet().start();
    printf("main returned\n");
+
+   counter = 4;
+   printf("counter is %d\n", counter);
 }
