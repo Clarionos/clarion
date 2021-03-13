@@ -29,8 +29,20 @@ export interface ClarionConnection {
     uri: string;
     sendMessage: (data: Uint8Array) => Promise<void>;
     close: () => Promise<void>;
+    onMessage: (data: Uint8Array) => Promise<void>;
+    onClose: (code: number, reason?: string) => Promise<void>;
+    onError: () => Promise<void>;
 }
+
+export interface ClarionConnectionAcceptor {
+    listen: (connection: ClarionConnection) => void;
+}
+
 export interface ClarionConnectionManager {
+    createAcceptor: (
+        port: number,
+        protocol: string
+    ) => ClarionConnectionAcceptor;
     connect: (
         uri: string,
         onMessage: (data: Uint8Array) => Promise<void>,

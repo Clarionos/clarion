@@ -14,6 +14,17 @@ export class ConnectionHandler {
         this.connectionManager = connectionManager;
     }
 
+    createAcceptor = (
+        port: number,
+        protocolPos: number,
+        protocolLen: number
+    ) => {
+        const protocol = this.memoryHandler.decodeStr(protocolPos, protocolLen);
+        return this.memoryHandler.addObj(
+            this.connectionManager.createAcceptor(port, protocol)
+        );
+    };
+
     connect = async (
         uriPos: number,
         uriLen: number,
@@ -94,6 +105,7 @@ export class ConnectionHandler {
     };
 
     imports = {
+        createAcceptor: this.createAcceptor.bind(this),
         connect: this.connect.bind(this),
         sendMessage: this.sendMessage.bind(this),
         close: this.close.bind(this),

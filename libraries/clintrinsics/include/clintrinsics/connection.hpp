@@ -22,6 +22,7 @@ namespace clintrinsics
           void (*fOnError)(void* pOnError),
           void* p,
           void (*f)(void* p, ConnectionTag* conn));
+
       [[clang::import_module("clarion"), clang::import_name("sendMessage")]] void sendMessage(
           ConnectionTag* conn,
           const void* messagePos,
@@ -32,24 +33,6 @@ namespace clintrinsics
       [[clang::import_module("clarion"), clang::import_name("close")]] void close(
           ConnectionTag* conn);
    }  // namespace imports
-
-   // struct ConnectionAcceptor : ExternalObject<...>
-   // {
-
-   //     ConnectionAcceptor() {
-   //         javascript->createAcceptor() /// get handle for the acceptor
-   //     }
-
-   //     void listen( port, proto ) {
-   //             // call acceptor function to start listening
-   //           javascript->listen( acceptor_handle, port, proto []( new_connection_handle ){
-   //                  this->onConnection( std::make_shared<Connection>(new_connection_handle) );
-   //           })
-   //     }
-
-   //     std::function<void(shared_ptr<Connection>)> onConnection = [] {};
-
-   // }
 
    struct Connection : ExternalObject<ConnectionTag>
    {
@@ -112,4 +95,42 @@ namespace clintrinsics
              });
       }
    };
+
+   struct ConnectionAcceptorTag;
+
+   namespace imports
+   {
+      [[clang::import_module("clarion"),
+        clang::import_name("createAcceptor")]] ConnectionAcceptorTag*
+      createAcceptor(uint32_t port, const char* name, uint32_t len);
+
+      [[clang::import_module("clarion"), clang::import_name("listen")]] void listen(
+          ConnectionAcceptorTag* acceptor,
+          void* pOnConnection,
+          void (*fOnConnection)(void* pOnConnection, ConnectionTag* connection));
+   }  // namespace imports
+
+   struct ConnectionAcceptor : ExternalObject<ConnectionAcceptorTag>
+   {
+      uint32_t port;
+      std::string protocol;
+
+      ConnectionAcceptor(uint32_t port, std::string protocol) : port{port}, protocol{protocol}
+      {
+         handle = imports::createAcceptor(port, protocol.c_str(), protocol.size());
+      }
+
+      std::function<void(std::shared_ptr<Connection>)> onConnection =
+          [](std::shared_ptr<Connection>) {};
+
+      void listen()
+      {
+         // call acceptor function to start listening
+         imports::listen(handle, this, [](void* p, ConnectionTag* connection) {
+            auto self = (ConnectionAcceptor*)p;
+            self->onConnection(std::make_shared<Connection>(connection));
+         });
+      }
+   };
+
 }  // namespace clintrinsics

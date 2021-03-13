@@ -41,15 +41,16 @@ export class DbManager implements ClarionDbManager {
 
     async close(db: any): Promise<void> {
         if (db) {
-            console.info("closing db >>>", db, db.name);
             for (const [key, value] of Object.entries(this.dbs)) {
                 if (value === db) {
+                    console.info("closing db", key);
+                    this.printStats(key);
                     delete this.dbs[key];
                     break;
                 }
             }
             db.close();
-            console.info("dbs after closing", this.dbs);
+            console.info("opened dbs after closing", this.dbs);
         }
     }
 

@@ -61,24 +61,23 @@ clintrinsics::Task<> testnet()
    printf(">> connection closed!\n");
 }
 
-int counter = 0;
+std::shared_ptr<clintrinsics::ConnectionAcceptor> globalAcceptor;
 
-[[clang::export_name("incrementCounter")]] void incrementCounter(int n)
-{
-   counter += n;
-   printf("counter is %d\n", counter);
-}
+// [[clang::export_name("incrementCounter")]] void incrementCounter(int n)
+// {
+//    counter += n;
+//    printf("counter is %d\n", counter);
+// }
 
 int main()
 {
    printf("starting coroutines...\n");
 
-   // globalAcceptor = make_shared<Acceptor>();
+   globalAcceptor = std::make_shared<clintrinsics::ConnectionAcceptor>(9125, "ws");
    // a->onConnection = [](shared_ptr<Connection> c) {
-   //    c->sendMessage("hello World");
-   // } a->onError = [](message) {
-   //    printf("server connections not supported: ", )
-   // }
+   //    c->sendMessage("welcome to a world with Clarity");
+   // };
+   // a->onError = [](message) { printf("server connections not supported: ", ) }
 
    // a->listen(port, proto);
 
@@ -90,7 +89,4 @@ int main()
    testdb().start();
    testnet().start();
    printf("main returned\n");
-
-   counter = 4;
-   printf("counter is %d\n", counter);
 }
