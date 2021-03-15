@@ -93,9 +93,7 @@ export class ClarionWebSocketAcceptor implements ClarionConnectionAcceptor {
 
     printStats = () => {
         console.info(
-            `Acceptor(${this.server.options.port}) Connections: ${
-                Object.keys(this.connections).length
-            }`
+            `Acceptor(${this.server.options.port}) Connections: ${this.server.clients.size}`
         );
         for (const key in this.connections) {
             console.info(">>> ", this.connectionInfo(key));
@@ -124,62 +122,18 @@ export class ClarionWebSocketAcceptor implements ClarionConnectionAcceptor {
         req: IncomingMessage,
         wasmCb: (connection: ClarionConnection) => void
     ) => {
-        const wsId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`; // todo: use an uuid
-
-        const connection = new ClarionWebSocket(ws);
-        wasmCb(connection);
-
-        this.connections[wsId] = {
-            connection,
-            remoteAddress: req.socket.remoteAddress,
-            connectedAt: new Date(),
-            streamedBytes: 0,
-        };
         console.info(
             "ClarionD incoming connection: ",
-            req.socket.remoteAddress,
-            wsId
+            req.socket.remoteAddress
         );
-
-        // ws.on("message", (message) => {
-        //     console.log(
-        //         "<<< clariond wsserver received: %s",
-        //         message,
-        //         " --> echoing..."
-        //     );
-        //     this.connections[wsId].streamedBytes += 1; // todo: get message size
-        //     ws.send(message);
-        // });
-
-        // ws.on("close", () => {
-        //     console.info("connection closed:", this.connectionInfo(wsId));
-        //     delete this.connections[wsId];
-        // });
-
-        // ws.on("error", (error) => {
-        //     console.error("error on connection", wsId, error);
-        //     delete this.connections[wsId];
-        // });
-
-        // ws.send(">>> WELCOME TO CLARIOND SERVER!");
+        const connection = new ClarionWebSocket(ws);
+        wasmCb(connection);
     };
 }
 
 export class ClarionServer implements ClarionConnectionManager {
     createConnection: (uri: string) => ClarionConnection;
-    // server: WebSocket.Server;
     acceptors: { [port: number]: ClarionConnectionAcceptor } = {};
-    connections: {
-        [key: string]: {
-            connection: WebSocket;
-            remoteAddress: string;
-            connectedAt: Date;
-        }; // todo: refactor
-    } = {};
-
-    // constructor(port: number) {
-    //     this.server = new WebSocket.Server({ port });
-    // }
 
     createAcceptor = (port: number, protocol: string) => {
         console.info(

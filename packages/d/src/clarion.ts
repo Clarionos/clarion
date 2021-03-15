@@ -10,7 +10,9 @@ export const initClarion = async (clarionWasm: Buffer) => {
     clarionContext = new Context(["wasm"], dbManager, server);
     await clarionContext.instanciate(clarionWasm);
     clarionContext.instance!.exports.initServer();
-    clarionContext.instance!.exports.test();
+
+    setTimeout(() => clarionContext.instance!.exports.test(), 3000);
+
     // (clarionContext.instance!.exports._start as Function)();
 };
 

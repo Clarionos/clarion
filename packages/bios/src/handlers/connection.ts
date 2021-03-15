@@ -39,10 +39,9 @@ export class ConnectionHandler {
         );
         acceptor.listen((newConnection: ClarionConnection) => {
             const connection = this.memoryHandler.addObj(newConnection);
-            console.info("new listened connection ", connection);
             this.memoryHandler.wasmCallback(
-                wasmCbOnConnectionPtr,
                 wasmCbOnConnectionIndex,
+                wasmCbOnConnectionPtr,
                 connection
             );
         });
@@ -76,6 +75,7 @@ export class ConnectionHandler {
         wasmCbOnErrorPtr: number,
         wasmCbOnErrorIndex: number
     ) => {
+        console.info("setting up connection ", connectionIndex);
         const connection = this.memoryHandler.getObj<ClarionConnection>(
             connectionIndex
         );
