@@ -41,14 +41,14 @@ clintrinsics::Task<> testdb()
 
 clintrinsics::Task<> testnet()
 {
-   clintrinsics::Connection myConnection{"ws://localhost:8080"};
+   clintrinsics::Connection myConnection{"ws://localhost:9125"};
    myConnection.onOpen = []() { printf("connection opened!\n"); };
    myConnection.onMessage = [](clintrinsics::ExternalBytes data) {
       printf("received bytes handle: %p -- size: %d\n", data.handle,
              (int)data.toUint8Vector().size());
    };
    myConnection.onClose = [](uint32_t code) { printf("connection closed code: %d\n", code); };
-   myConnection.onError = []() { printf("connection failed with error!\n"); };
+   myConnection.onError = []() { printf("client connection has failed!\n"); };
    co_await myConnection.connect();
 
    printf(">> connection handle: %p\n", myConnection.handle);
@@ -63,24 +63,35 @@ clintrinsics::Task<> testnet()
 
 std::shared_ptr<clintrinsics::ConnectionAcceptor> globalAcceptor;
 
-// [[clang::export_name("incrementCounter")]] void incrementCounter(int n)
-// {
-//    counter += n;
-//    printf("counter is %d\n", counter);
-// }
-
-int main()
+void setupGlobalAcceptor()
 {
-   printf("starting coroutines...\n");
-
    globalAcceptor = std::make_shared<clintrinsics::ConnectionAcceptor>(9125, "ws");
-   // a->onConnection = [](shared_ptr<Connection> c) {
-   //    c->sendMessage("welcome to a world with Clarity");
-   // };
-   // a->onError = [](message) { printf("server connections not supported: ", ) }
+   globalAcceptor->onConnection = [](std::shared_ptr<clintrinsics::Connection> connection) {
+      connection->onMessage = [](clintrinsics::ExternalBytes data) {
+         printf("acceptor >>> received bytes handle: %p -- size: %d\n", data.handle,
+                (int)data.toUint8Vector().size());
+      };
+      connection->onClose = [](uint32_t code) {
+         printf("acceptor >>> connection closed code: %d\n", code);
+      };
+      connection->onError = []() { printf("acceptor >>> connection failed with error!\n"); };
+      connection->setup();
+      connection->sendMessage("welcome to a world with Clarity");
+   };
+   // globalAcceptor->onError = [](message) { printf("server connections not supported: ", ) }
+   globalAcceptor->listen();
+   printf("global acceptor handle >> %p\n", globalAcceptor->handle);
+}
 
-   // a->listen(port, proto);
+[[clang::export_name("initServer")]] void initServer()
+{
+   printf("initializing clariond server...\n");
+   setupGlobalAcceptor();
+   printf("clariond initialization server returned\n");
+}
 
+[[clang::export_name("test")]] void test()
+{
    // testco("delay 1s", 1000).start();
    // testco("delay 2s", 2000).start();
    // testco("delay 3s", 3000).start();
@@ -88,5 +99,12 @@ int main()
    // testco2(250).start();
    testdb().start();
    testnet().start();
+}
+
+// TODO: why does main destroy the GlobalAcceptor?
+int main()
+{
+   printf("starting coroutines...\n");
+   test();
    printf("main returned\n");
 }

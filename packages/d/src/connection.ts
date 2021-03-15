@@ -14,18 +14,37 @@ export class ClarionWebSocket implements ClarionConnection {
     onClose: (code: number, reason?: string) => Promise<void>;
     onError: () => Promise<void>;
 
-    constructor(
-        websocket: WebSocket,
-        wasmCbOnMessage,
-        wasmCbOnClose,
-        wasmCbOnError
-    ) {
+    constructor(websocket: WebSocket) {
         this.websocket = websocket;
         this.uri = websocket.url;
-        this.onMessage = wasmCbOnMessage;
-        this.onClose = wasmCbOnClose;
-        this.onError = wasmCbOnError;
     }
+
+    setupOnMessage = (wasmCallback: (data: Uint8Array) => Promise<void>) => {
+        this.websocket.on("message", async (data: Buffer | string) => {
+            try {
+                let bytes: Uint8Array;
+                if (typeof data === "string") {
+                    bytes = new TextEncoder().encode(data);
+                } else {
+                    bytes = new Uint8Array(data);
+                }
+                console.info("received data ", data);
+                wasmCallback(bytes);
+            } catch (e) {
+                console.error("!!! Unknown message data type to handle", e);
+            }
+        });
+    };
+
+    setupOnClose = (wasmCallback) => {
+        this.websocket.on("close", () =>
+            wasmCallback({ code: 1, reason: "connection closed" })
+        );
+    };
+
+    setupOnError = (wasmCallback) => {
+        this.websocket.on("error", wasmCallback);
+    };
 
     async sendMessage(data: Uint8Array): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -44,39 +63,24 @@ export class ClarionWebSocket implements ClarionConnection {
 
     openConnection = async (): Promise<void> => {
         return new Promise((resolve, reject) => {
-            this.websocket.on("message", async (data: Buffer | string) => {
-                try {
-                    let bytes: Uint8Array;
-                    if (typeof data === "string") {
-                        bytes = new TextEncoder().encode(data);
-                    } else {
-                        bytes = new Uint8Array(data);
-                    }
-                    console.info("received data ", data);
-                    this.onMessage(bytes);
-                } catch (e) {
-                    console.error("!!! Unknown message data type to handle", e);
-                }
-            });
-            this.websocket.on("close", () =>
-                this.onClose({ code: 1, reason: "connection closed" } as any)
-            );
-            this.websocket.on("open", () => {
-                console.info(this.websocket.url, "ws connected!");
-                this.websocket.on("open", () => null);
-                this.websocket.on("error", this.onError);
-                return resolve();
-            });
-            this.websocket.on("error", reject);
+            try {
+                this.websocket.on("open", () => {
+                    console.info(this.websocket.url, "ws connected!");
+                    return resolve();
+                });
+            } catch (e) {
+                reject(e);
+            }
         });
     };
 }
 
 export class ClarionWebSocketAcceptor implements ClarionConnectionAcceptor {
     server: WebSocket.Server;
+    statsInterval: NodeJS.Timeout;
     connections: {
         [key: string]: {
-            connection: WebSocket;
+            connection: ClarionWebSocket;
             remoteAddress: string;
             connectedAt: Date;
             streamedBytes: number;
@@ -105,20 +109,28 @@ export class ClarionWebSocketAcceptor implements ClarionConnectionAcceptor {
         return `${key} ${remoteAddress} ${connectedAt.toISOString()} - StreamedData: ${streamedBytes}`;
     };
 
-    listen = (
-        onMessage: (data: Uint8Array) => Promise<void>,
-        onClose: (code: number, reason?: string) => Promise<void>,
-        onError: () => Promise<void>
-    ) => {
+    listen = (wasmCb: (connection: ClarionConnection) => void) => {
         console.info("Acceptor listening on port ", this.server.options.port);
-        setInterval(this.printStats, 1500);
-        this.server.on("connection", () => {});
+        if (!this.statsInterval) {
+            this.statsInterval = setInterval(this.printStats, 1500);
+        }
+        this.server.on("connection", (ws, req) =>
+            this.handleServerConnection(ws, req, wasmCb)
+        );
     };
 
-    handleServerConnection = (ws: WebSocket, req: IncomingMessage) => {
+    handleServerConnection = (
+        ws: WebSocket,
+        req: IncomingMessage,
+        wasmCb: (connection: ClarionConnection) => void
+    ) => {
         const wsId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`; // todo: use an uuid
+
+        const connection = new ClarionWebSocket(ws);
+        wasmCb(connection);
+
         this.connections[wsId] = {
-            connection: ws,
+            connection,
             remoteAddress: req.socket.remoteAddress,
             connectedAt: new Date(),
             streamedBytes: 0,
@@ -129,31 +141,32 @@ export class ClarionWebSocketAcceptor implements ClarionConnectionAcceptor {
             wsId
         );
 
-        ws.on("message", (message) => {
-            console.log(
-                "<<< clariond wsserver received: %s",
-                message,
-                " --> echoing..."
-            );
-            this.connections[wsId].streamedBytes += 1; // todo: get message size
-            ws.send(message);
-        });
+        // ws.on("message", (message) => {
+        //     console.log(
+        //         "<<< clariond wsserver received: %s",
+        //         message,
+        //         " --> echoing..."
+        //     );
+        //     this.connections[wsId].streamedBytes += 1; // todo: get message size
+        //     ws.send(message);
+        // });
 
-        ws.on("close", () => {
-            console.info("connection closed:", this.connectionInfo(wsId));
-            delete this.connections[wsId];
-        });
+        // ws.on("close", () => {
+        //     console.info("connection closed:", this.connectionInfo(wsId));
+        //     delete this.connections[wsId];
+        // });
 
-        ws.on("error", (error) => {
-            console.error("error on connection", wsId, error);
-            delete this.connections[wsId];
-        });
+        // ws.on("error", (error) => {
+        //     console.error("error on connection", wsId, error);
+        //     delete this.connections[wsId];
+        // });
 
-        ws.send(">>> WELCOME TO CLARIOND SERVER!");
+        // ws.send(">>> WELCOME TO CLARIOND SERVER!");
     };
 }
 
 export class ClarionServer implements ClarionConnectionManager {
+    createConnection: (uri: string) => ClarionConnection;
     // server: WebSocket.Server;
     acceptors: { [port: number]: ClarionConnectionAcceptor } = {};
     connections: {
@@ -197,12 +210,10 @@ export class ClarionServer implements ClarionConnectionManager {
         onError: () => Promise<void>
     ): Promise<ClarionWebSocket> => {
         console.info(">>> ws new connection! connecting to", uri);
-        const connection = new ClarionWebSocket(
-            new WebSocket(uri),
-            onMessage,
-            onClose,
-            onError
-        );
+        const connection = new ClarionWebSocket(new WebSocket(uri));
+        connection.setupOnMessage(onMessage);
+        connection.setupOnClose(onClose);
+        connection.setupOnError(onError);
         await connection.openConnection();
         return connection;
     };

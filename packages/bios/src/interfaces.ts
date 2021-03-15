@@ -29,13 +29,15 @@ export interface ClarionConnection {
     uri: string;
     sendMessage: (data: Uint8Array) => Promise<void>;
     close: () => Promise<void>;
-    onMessage: (data: Uint8Array) => Promise<void>;
-    onClose: (code: number, reason?: string) => Promise<void>;
-    onError: () => Promise<void>;
+    setupOnMessage: (wasmCallback: (data: Uint8Array) => Promise<void>) => void;
+    setupOnClose: (
+        wasmCallback: (code: number, reason?: string) => Promise<void>
+    ) => void;
+    setupOnError: (wasmCallback: () => Promise<void>) => void;
 }
 
 export interface ClarionConnectionAcceptor {
-    listen: (connection: ClarionConnection) => void;
+    listen: (cb: (connection: ClarionConnection) => void) => void;
 }
 
 export interface ClarionConnectionManager {
@@ -43,6 +45,7 @@ export interface ClarionConnectionManager {
         port: number,
         protocol: string
     ) => ClarionConnectionAcceptor;
+    createConnection: (uri: string) => ClarionConnection;
     connect: (
         uri: string,
         onMessage: (data: Uint8Array) => Promise<void>,

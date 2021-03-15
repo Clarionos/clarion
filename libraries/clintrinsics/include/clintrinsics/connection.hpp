@@ -23,6 +23,21 @@ namespace clintrinsics
           void* p,
           void (*f)(void* p, ConnectionTag* conn));
 
+      [[clang::import_module("clarion"), clang::import_name("createConnection")]] void
+      createConnection(const char* name,
+                       uint32_t len,
+                       void* p,
+                       void (*f)(void* p, ConnectionTag* conn));
+
+      [[clang::import_module("clarion"), clang::import_name("setupConnection")]] void
+      setupConnection(ConnectionTag* conn,
+                      void* pOnMessage,
+                      void (*fOnMessage)(void* pOnMessage, BytesTag* bytesIndex),
+                      void* pOnClose,
+                      void (*fOnClose)(void* pOnClose, uint32_t code),
+                      void* pOnError,
+                      void (*fOnError)(void* pOnError));
+
       [[clang::import_module("clarion"), clang::import_name("sendMessage")]] void sendMessage(
           ConnectionTag* conn,
           const void* messagePos,
@@ -67,6 +82,34 @@ namespace clintrinsics
          return sendMessage(message.begin(), message.size());
       }
 
+      auto create()
+      {
+         return callExternalAsync<void, imports::createConnection>(
+             std::tuple{uri.c_str(), uri.size()},
+             [this](ConnectionTag* conn) { this->handle = conn; });
+      }
+
+      void setup()
+      {
+         imports::setupConnection(
+             handle,
+             this,  // onMessage event
+             [](void* p, BytesTag* bytesIndex) {
+                auto self = (Connection*)p;
+                self->onMessage(ExternalBytes{bytesIndex});
+             },
+             this,  // onClose event
+             [](void* p, uint32_t code) {
+                auto self = (Connection*)p;
+                self->onClose(code);
+             },
+             this,  // onError event
+             [](void* p) {
+                auto self = (Connection*)p;
+                self->onError();
+             });
+      }
+
       auto connect()
       {
          return callExternalAsync<void, imports::connect>(
@@ -104,7 +147,7 @@ namespace clintrinsics
         clang::import_name("createAcceptor")]] ConnectionAcceptorTag*
       createAcceptor(uint32_t port, const char* name, uint32_t len);
 
-      [[clang::import_module("clarion"), clang::import_name("listen")]] void listen(
+      [[clang::import_module("clarion"), clang::import_name("listenAcceptor")]] void listen(
           ConnectionAcceptorTag* acceptor,
           void* pOnConnection,
           void (*fOnConnection)(void* pOnConnection, ConnectionTag* connection));
