@@ -1,4 +1,4 @@
-const wsUri = "wss://echo.websocket.org/";
+const wsUri = "ws://localhost:9125";
 const offlineMenu = document.getElementById("offline-menu");
 const onlineMenu = document.getElementById("online-menu");
 const connectButton = document.getElementById("connect");
@@ -33,10 +33,23 @@ const onClose = (_evt: Event) => {
     offlineMenu.style.display = "block";
 };
 
-const onMessage = (evt: MessageEvent) => {
-    writeToScreen(
-        '<span style="color: blue;">RESPONSE: ' + evt.data + "</span>"
-    );
+const onMessage = async (e: MessageEvent) => {
+    try {
+        let value: string;
+        if (typeof e.data === "string") {
+            value = e.data;
+        } else {
+            const dataBuffer = await (e.data as Blob).arrayBuffer();
+            console.info(dataBuffer);
+            value = new TextDecoder().decode(new Uint8Array(dataBuffer));
+        }
+        console.info("received data ", e.data);
+        writeToScreen(
+            '<span style="color: blue;">RESPONSE: ' + value + "</span>"
+        );
+    } catch (e) {
+        console.error("!!! Unknown message data type to handle", e);
+    }
 };
 
 const onError = (evt: Event) => {

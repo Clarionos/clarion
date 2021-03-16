@@ -4,6 +4,7 @@
 
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 namespace clintrinsics
 {
@@ -49,6 +50,9 @@ namespace clintrinsics
 
       Connection(const std::string& uri) : uri{uri} {}
 
+      // todo: add the following properties:
+      // remote address + remote port + local address + local port
+
       std::string uri;
 
       // onOpen just indicates that the connection was opened
@@ -74,6 +78,21 @@ namespace clintrinsics
       auto sendMessage(std::string_view message)
       {
          return sendMessage(message.begin(), message.size());
+      }
+
+      Task<> sendMessageSyncTask(const void* messagePos, uint32_t messageLen)
+      {
+         co_await sendMessage(messagePos, messageLen);
+      }
+
+      void sendMessageSync(std::string_view message)
+      {
+         sendMessageSyncTask(message.begin(), message.size()).start();
+      }
+
+      void sendMessageSync(const void* messagePos, uint32_t messageLen)
+      {
+         sendMessageSyncTask(messagePos, messageLen).start();
       }
 
       // used to setup callbacks on connection events
@@ -148,13 +167,13 @@ namespace clintrinsics
       uint32_t port;
       std::string protocol;
 
+      std::function<void(std::shared_ptr<Connection>)> onConnection =
+          [](std::shared_ptr<Connection>) {};
+
       ConnectionAcceptor(uint32_t port, std::string protocol) : port{port}, protocol{protocol}
       {
          handle = imports::createAcceptor(port, protocol.c_str(), protocol.size());
       }
-
-      std::function<void(std::shared_ptr<Connection>)> onConnection =
-          [](std::shared_ptr<Connection>) {};
 
       void listen()
       {

@@ -1,7 +1,7 @@
 import { Context } from "@clarionos/bios";
 
 import "./pwa-tests";
-import "./websockets";
+import "./websocket-tests";
 import { getContext } from "./clarion";
 
 let clarionContext: Context;
@@ -12,18 +12,9 @@ const init = async () => {
 
 const startClarionButton = document.getElementById("start-clarion");
 startClarionButton.addEventListener("click", () => {
-    (clarionContext.instance!.exports._start as Function)();
+    (clarionContext.instance.exports.test as Function)();
     clarionKvDiv.innerHTML = "loading...";
     setTimeout(printDbStats, 1500);
-});
-
-const clarionIncrementCounterButton = document.getElementById(
-    "clarion-increment-counter"
-);
-clarionIncrementCounterButton.addEventListener("click", () => {
-    (clarionContext.instance!.exports.incrementCounter as Function)(
-        Math.floor(Math.random() * 100)
-    );
 });
 
 const clarionKvDiv = document.getElementById("clarion-kv");

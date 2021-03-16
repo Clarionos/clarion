@@ -12,7 +12,9 @@ export const initClarion = async (clarionWasm: Buffer) => {
     clarionContext.instance.exports.initServer();
 
     // runs the Clarion functionalities tests (setkvs, ws client connection etc.)
-    setTimeout(() => clarionContext.instance.exports.test(), 3000);
+    setTimeout(clarionContext.instance.exports.test, 3000);
+
+    setInterval(clarionContext.instance.exports.status, 1500);
 };
 
 export const exitClarion = () => {

@@ -61,24 +61,64 @@ clintrinsics::Task<> testnet()
    printf(">> connection closed!\n");
 }
 
-std::shared_ptr<clintrinsics::ConnectionAcceptor> globalAcceptor;
+// todo: move to a proper node file
+namespace clintrinsics
+{
+   struct ClarionNode
+   {
+      std::unordered_set<std::shared_ptr<ConnectionAcceptor>> acceptors;
+      std::unordered_set<std::shared_ptr<Connection>> connections;
+
+      void addConnection(std::shared_ptr<Connection> connection)
+      {
+         connections.emplace(connection);
+      }
+
+      void removeConnection(std::shared_ptr<Connection> connection)
+      {
+         connections.erase(connection);
+      }
+
+      void status()
+      {
+         printf(">>> Acceptors %d / Connections: %d\n", (int)acceptors.size(),
+                (int)connections.size());
+      }
+   };
+}  // namespace clintrinsics
+
+static clintrinsics::ClarionNode node;
+static std::shared_ptr<clintrinsics::ConnectionAcceptor> globalAcceptor;
 
 void setupGlobalAcceptor()
 {
    globalAcceptor = std::make_shared<clintrinsics::ConnectionAcceptor>(9125, "ws");
+   node.acceptors.emplace(globalAcceptor);
+
    globalAcceptor->onConnection = [](std::shared_ptr<clintrinsics::Connection> connection) {
-      connection->onMessage = [](clintrinsics::ExternalBytes data) {
-         printf("acceptor >>> received bytes handle: %p -- size: %d\n", data.handle,
-                (int)data.toUint8Vector().size());
+      printf("conn(%d/%p) >>> new incoming connection\n", globalAcceptor->port, connection->handle);
+      connection->onMessage = [connection](clintrinsics::ExternalBytes data) {
+         auto dataBytes = data.toUint8Vector();
+         printf("conn(%d/%p) >>> received bytes handle: %p -- size: %d\n", globalAcceptor->port,
+                connection->handle, data.handle, (int)dataBytes.size());
+         connection->sendMessageSync(dataBytes.data(), dataBytes.size());
       };
-      connection->onClose = [](uint32_t code) {
-         printf("acceptor >>> connection closed code: %d\n", code);
+      connection->onClose = [connection](uint32_t code) {
+         printf("conn(%d/%p) >>> connection closed code: %d\n", globalAcceptor->port,
+                connection->handle, code);
+         node.removeConnection(connection);
       };
-      connection->onError = []() { printf("acceptor >>> connection failed with error!\n"); };
+      connection->onError = [connection]() {
+         printf("conn(%d/%p) >>> connection failed with error!\n", globalAcceptor->port,
+                connection->handle);
+      };
       connection->setup();
-      connection->sendMessage("welcome to a world with Clarity");
+      connection->sendMessageSync("welcome to a world with Clarity");
+
+      printf("conn(%d/%p) >>> setup done!\n", globalAcceptor->port, connection->handle);
+
+      node.addConnection(connection);
    };
-   // globalAcceptor->onError = [](message) { printf("server connections not supported: ", ) }
    globalAcceptor->listen();
    printf("global acceptor handle >> %p\n", globalAcceptor->handle);
 }
@@ -88,6 +128,11 @@ void setupGlobalAcceptor()
    printf("initializing clariond server...\n");
    setupGlobalAcceptor();
    printf("clariond initialization server returned\n");
+}
+
+[[clang::export_name("status")]] void status()
+{
+   node.status();
 }
 
 [[clang::export_name("test")]] void test()

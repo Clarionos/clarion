@@ -39,7 +39,7 @@ export class ConnectionManager implements ClarionConnectionManager {
         onClose: (code: number, reason?: string) => Promise<void>,
         onError: () => Promise<void>
     ): Promise<Connection> => {
-        console.info(">>> ws new connection! connecting to", uri);
+        console.info(">>> creating new ws, connecting to", uri);
         const connection = new Connection(new WebSocket(uri));
         connection.setupOnMessage(onMessage);
         connection.setupOnClose(onClose);
