@@ -9,7 +9,6 @@ import { Acceptor } from "./acceptor";
 import { Connection } from "./connection";
 
 export class ConnectionManager implements ClarionConnectionManager {
-    createConnection: (uri: string) => ClarionConnection;
     acceptors: { [port: number]: ClarionConnectionAcceptor } = {};
 
     createAcceptor = (port: number, protocol: string) => {

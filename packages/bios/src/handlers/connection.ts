@@ -47,25 +47,6 @@ export class ConnectionHandler {
         });
     };
 
-    createConnection = (
-        uriPos: number,
-        uriLen: number,
-        wasmCbPtr: number,
-        wasmCbIndex: number
-    ) => {
-        try {
-            const uri = this.memoryHandler.decodeStr(uriPos, uriLen);
-            const connection = this.connectionManager.createConnection(uri);
-            this.memoryHandler.wasmCallback(
-                wasmCbIndex,
-                wasmCbPtr,
-                this.memoryHandler.addObj(connection)
-            );
-        } catch (e) {
-            throwError(e);
-        }
-    };
-
     setupConnection = (
         connectionIndex: number,
         wasmCbOnMessagePtr: number,
@@ -75,7 +56,6 @@ export class ConnectionHandler {
         wasmCbOnErrorPtr: number,
         wasmCbOnErrorIndex: number
     ) => {
-        console.info("setting up connection ", connectionIndex);
         const connection = this.memoryHandler.getObj<ClarionConnection>(
             connectionIndex
         );

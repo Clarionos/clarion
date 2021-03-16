@@ -23,12 +23,6 @@ namespace clintrinsics
           void* p,
           void (*f)(void* p, ConnectionTag* conn));
 
-      [[clang::import_module("clarion"), clang::import_name("createConnection")]] void
-      createConnection(const char* name,
-                       uint32_t len,
-                       void* p,
-                       void (*f)(void* p, ConnectionTag* conn));
-
       [[clang::import_module("clarion"), clang::import_name("setupConnection")]] void
       setupConnection(ConnectionTag* conn,
                       void* pOnMessage,
@@ -82,13 +76,8 @@ namespace clintrinsics
          return sendMessage(message.begin(), message.size());
       }
 
-      auto create()
-      {
-         return callExternalAsync<void, imports::createConnection>(
-             std::tuple{uri.c_str(), uri.size()},
-             [this](ConnectionTag* conn) { this->handle = conn; });
-      }
-
+      // used to setup callbacks on connection events
+      // (mostly for setup and handling new incoming connections)
       void setup()
       {
          imports::setupConnection(
@@ -110,6 +99,7 @@ namespace clintrinsics
              });
       }
 
+      // used for creating and establishing a new client connection
       auto connect()
       {
          return callExternalAsync<void, imports::connect>(

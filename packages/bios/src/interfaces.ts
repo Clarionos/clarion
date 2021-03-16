@@ -3,7 +3,7 @@
  */
 
 export interface ClarionDbManager {
-    open: (name: string) => Promise<any>; // todo: specify type
+    open: (name: string) => Promise<any>;
     createTransaction: (db: any, writable?: boolean) => ClarionDbTrx;
     close: (db: any) => Promise<void>;
 }
@@ -22,7 +22,6 @@ export interface ClarionDbCursor {
     getValue: () => Uint8Array;
     hasValue: () => boolean;
     next: () => Promise<void>;
-    close: () => Promise<void>;
 }
 
 export interface ClarionConnection {
@@ -45,7 +44,6 @@ export interface ClarionConnectionManager {
         port: number,
         protocol: string
     ) => ClarionConnectionAcceptor;
-    createConnection: (uri: string) => ClarionConnection;
     connect: (
         uri: string,
         onMessage: (data: Uint8Array) => Promise<void>,

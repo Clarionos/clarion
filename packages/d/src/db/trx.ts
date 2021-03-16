@@ -45,7 +45,6 @@ export class ClarionTrx implements ClarionDbTrx {
     }
 
     releaseCursors = () => {
-        // todo: need to check for closed cursors...
         this.cursors.forEach((cursor) => cursor.close());
     };
 }

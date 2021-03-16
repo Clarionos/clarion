@@ -5,9 +5,6 @@ import { ClarionConnection } from "@clarionos/bios";
 export class Connection implements ClarionConnection {
     uri: string;
     websocket: WebSocket;
-    onMessage: (data: Uint8Array) => Promise<void>;
-    onClose: (code: number, reason?: string) => Promise<void>;
-    onError: () => Promise<void>;
 
     constructor(websocket: WebSocket) {
         this.websocket = websocket;
@@ -23,7 +20,6 @@ export class Connection implements ClarionConnection {
                 } else {
                     bytes = new Uint8Array(data);
                 }
-                console.info("received data ", data);
                 wasmCallback(bytes);
             } catch (e) {
                 console.error("!!! Unknown message data type to handle", e);
