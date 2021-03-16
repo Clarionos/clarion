@@ -15,7 +15,7 @@ export class ClarionCursor implements ClarionDbCursor {
     }
 
     getValue(): Uint8Array {
-        return new Uint8Array(this.cursor.getCurrentBinary()); // todo: convert to Uint8Array?
+        return new Uint8Array(this.cursor.getCurrentBinary());
     }
 
     hasValue(): boolean {

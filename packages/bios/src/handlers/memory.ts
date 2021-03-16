@@ -8,7 +8,6 @@ export class MemoryHandler {
 
     setInstance = (instance: WebAssembly.Instance) => {
         this.instance = instance;
-        // todo: should we clear the objects here?
     };
 
     getMemory = () => {

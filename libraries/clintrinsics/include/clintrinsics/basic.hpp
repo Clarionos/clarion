@@ -39,11 +39,10 @@ namespace clintrinsics
    template <typename Tag>
    struct ExternalObject
    {
-      typedef Tag* TagType;
-      TagType handle = nullptr;
+      Tag* handle = nullptr;
 
       ExternalObject() = default;
-      ExternalObject(TagType handle) : handle{handle} {}
+      ExternalObject(Tag* handle) : handle{handle} {}
       ExternalObject(const ExternalObject&) = delete;
       ExternalObject(ExternalObject&& src) { *this = std::move(src); }
 

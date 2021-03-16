@@ -21,8 +21,6 @@ namespace clintrinsics
           CursorTag* cursor);
       [[clang::import_module("clarion"), clang::import_name("cursorNext")]] void
       cursorNext(CursorTag* cursor, void* p, void (*f)(void* p));
-      [[clang::import_module("clarion"), clang::import_name("closeCursor")]] void closeCursor(
-          CursorTag* cursor);
    }  // namespace imports
 
    struct KVRange : ExternalObject<CursorTag>

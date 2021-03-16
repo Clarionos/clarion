@@ -1,5 +1,9 @@
 import { throwError } from "../error";
-import { ClarionConnectionManager, ClarionConnection } from "../interfaces";
+import {
+    ClarionConnectionManager,
+    ClarionConnection,
+    ClarionConnectionAcceptor,
+} from "../interfaces";
 import { MemoryHandler } from "./memory";
 
 export class ConnectionHandler {
@@ -13,6 +17,69 @@ export class ConnectionHandler {
         this.memoryHandler = memoryHandler;
         this.connectionManager = connectionManager;
     }
+
+    createAcceptor = (
+        port: number,
+        protocolPos: number,
+        protocolLen: number
+    ) => {
+        const protocol = this.memoryHandler.decodeStr(protocolPos, protocolLen);
+        return this.memoryHandler.addObj(
+            this.connectionManager.createAcceptor(port, protocol)
+        );
+    };
+
+    listenAcceptor = (
+        acceptorIndex: number,
+        wasmCbOnConnectionPtr: number,
+        wasmCbOnConnectionIndex: number
+    ) => {
+        const acceptor = this.memoryHandler.getObj<ClarionConnectionAcceptor>(
+            acceptorIndex
+        );
+        acceptor.listen((newConnection: ClarionConnection) => {
+            const connection = this.memoryHandler.addObj(newConnection);
+            this.memoryHandler.wasmCallback(
+                wasmCbOnConnectionIndex,
+                wasmCbOnConnectionPtr,
+                connection
+            );
+        });
+    };
+
+    setupConnection = (
+        connectionIndex: number,
+        wasmCbOnMessagePtr: number,
+        wasmCbOnMessageIndex: number,
+        wasmCbOnClosePtr: number,
+        wasmCbOnCloseIndex: number,
+        wasmCbOnErrorPtr: number,
+        wasmCbOnErrorIndex: number
+    ) => {
+        const connection = this.memoryHandler.getObj<ClarionConnection>(
+            connectionIndex
+        );
+        connection.setupOnMessage(async (data: Uint8Array) => {
+            this.memoryHandler.wasmCallback(
+                wasmCbOnMessageIndex,
+                wasmCbOnMessagePtr,
+                this.memoryHandler.addObj(data)
+            );
+        });
+        connection.setupOnClose(async (code) => {
+            this.memoryHandler.wasmCallback(
+                wasmCbOnCloseIndex,
+                wasmCbOnClosePtr,
+                code
+            );
+        });
+        connection.setupOnError(async () => {
+            this.memoryHandler.wasmCallback(
+                wasmCbOnErrorIndex,
+                wasmCbOnErrorPtr
+            );
+        });
+    };
 
     connect = async (
         uriPos: number,
@@ -94,6 +161,9 @@ export class ConnectionHandler {
     };
 
     imports = {
+        createAcceptor: this.createAcceptor.bind(this),
+        listenAcceptor: this.listenAcceptor.bind(this),
+        setupConnection: this.setupConnection.bind(this),
         connect: this.connect.bind(this),
         sendMessage: this.sendMessage.bind(this),
         close: this.close.bind(this),

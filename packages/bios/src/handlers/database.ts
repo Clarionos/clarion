@@ -134,10 +134,6 @@ export class DatabaseHandler {
         }
     };
 
-    closeCursor = (cursorIndex: number) => {
-        this.memoryHandler.getObj<ClarionDbCursor>(cursorIndex).close();
-    };
-
     imports = {
         openDb: this.openDb.bind(this),
         closeDatabase: this.closeDatabase.bind(this),
@@ -149,6 +145,5 @@ export class DatabaseHandler {
         cursorHasValue: this.cursorHasValue.bind(this),
         cursorValue: this.cursorValue.bind(this),
         cursorNext: this.cursorNext.bind(this),
-        closeCursor: this.closeCursor.bind(this),
     };
 }
