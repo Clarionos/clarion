@@ -1,19 +1,18 @@
 import { Context } from "@clarionos/bios";
-import { ClarionServer } from "./connection";
+import { ConnectionManager } from "./connection";
 import { DbManager } from "./db";
 
 let clarionContext;
-const server = new ClarionServer();
+const connectionManager = new ConnectionManager();
 const dbManager = new DbManager();
 
 export const initClarion = async (clarionWasm: Buffer) => {
-    clarionContext = new Context(["wasm"], dbManager, server);
+    clarionContext = new Context(["wasm"], dbManager, connectionManager);
     await clarionContext.instanciate(clarionWasm);
-    clarionContext.instance!.exports.initServer();
+    clarionContext.instance.exports.initServer();
 
-    setTimeout(() => clarionContext.instance!.exports.test(), 3000);
-
-    // (clarionContext.instance!.exports._start as Function)();
+    // runs the Clarion functionalities tests (setkvs, ws client connection etc.)
+    setTimeout(() => clarionContext.instance.exports.test(), 3000);
 };
 
 export const exitClarion = () => {
