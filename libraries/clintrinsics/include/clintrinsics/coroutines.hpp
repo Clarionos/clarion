@@ -192,6 +192,10 @@ namespace clintrinsics
       }
 
       void await_resume() {}
+
+      Task<> await_task() { co_await* this; }
+
+      void run() { await_task().start(); }
    };
 
    // Return an awaitable which invokes an external async function, then feeds

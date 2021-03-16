@@ -101,7 +101,7 @@ void setupGlobalAcceptor()
          auto dataBytes = data.toUint8Vector();
          printf("conn(%d/%p) >>> received bytes handle: %p -- size: %d\n", globalAcceptor->port,
                 connection->handle, data.handle, (int)dataBytes.size());
-         connection->sendMessageSync(dataBytes.data(), dataBytes.size());
+         connection->sendMessage(dataBytes.data(), dataBytes.size()).run();
       };
       connection->onClose = [connection](uint32_t code) {
          printf("conn(%d/%p) >>> connection closed code: %d\n", globalAcceptor->port,
@@ -113,7 +113,7 @@ void setupGlobalAcceptor()
                 connection->handle);
       };
       connection->setup();
-      connection->sendMessageSync("welcome to a world with Clarity");
+      connection->sendMessage("welcome to a world with Clarity").run();
 
       printf("conn(%d/%p) >>> setup done!\n", globalAcceptor->port, connection->handle);
 

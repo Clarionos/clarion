@@ -80,21 +80,6 @@ namespace clintrinsics
          return sendMessage(message.begin(), message.size());
       }
 
-      Task<> sendMessageSyncTask(const void* messagePos, uint32_t messageLen)
-      {
-         co_await sendMessage(messagePos, messageLen);
-      }
-
-      void sendMessageSync(std::string_view message)
-      {
-         sendMessageSyncTask(message.begin(), message.size()).start();
-      }
-
-      void sendMessageSync(const void* messagePos, uint32_t messageLen)
-      {
-         sendMessageSyncTask(messagePos, messageLen).start();
-      }
-
       // used to setup callbacks on connection events
       // (mostly for setup and handling new incoming connections)
       void setup()
