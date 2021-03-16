@@ -146,7 +146,6 @@ void setupGlobalAcceptor()
    testnet().start();
 }
 
-// TODO: why does main destroy the GlobalAcceptor?
 int main()
 {
    printf("starting coroutines...\n");
