@@ -37,12 +37,16 @@ export class ConnectionHandler {
         const acceptor = this.memoryHandler.getObj<ClarionConnectionAcceptor>(
             acceptorIndex
         );
-        acceptor.listen((newConnection: ClarionConnection) => {
-            const connection = this.memoryHandler.addObj(newConnection);
+        acceptor.listen((connection: ClarionConnection) => {
             this.memoryHandler.wasmCallback(
                 wasmCbOnConnectionIndex,
                 wasmCbOnConnectionPtr,
-                connection
+                this.memoryHandler.addObj(connection),
+                this.memoryHandler.addString(connection.protocol),
+                this.memoryHandler.addString(connection.remoteAddress),
+                connection.remotePort,
+                this.memoryHandler.addString(connection.localAddress),
+                connection.localPort
             );
         });
     };

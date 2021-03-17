@@ -48,12 +48,24 @@ namespace clintrinsics
    {
       using ExternalObject<ConnectionTag>::ExternalObject;
 
-      Connection(const std::string& uri) : uri{uri} {}
+      Connection(const std::string& protocol,
+                 const std::string& remoteAddress,
+                 const uint32_t remotePort,
+                 const std::string& localAddress = "",
+                 const uint32_t localPort = 0)
+          : protocol{protocol},
+            remoteAddress{remoteAddress},
+            remotePort{remotePort},
+            localAddress{localAddress},
+            localPort{localPort}
+      {
+      }
 
-      // todo: add the following properties:
-      // remote address + remote port + local address + local port
-
-      std::string uri;
+      std::string protocol;
+      std::string remoteAddress;
+      uint32_t remotePort;
+      std::string localAddress;
+      uint32_t localPort;
 
       // onOpen just indicates that the connection was opened
       std::function<void()> onOpen = [] {};
@@ -106,6 +118,7 @@ namespace clintrinsics
       // used for creating and establishing a new client connection
       auto connect()
       {
+         std::string uri = protocol + "://" + remoteAddress + ":" + std::to_string(remotePort);
          return callExternalAsync<void, imports::connect>(
              std::tuple{uri.c_str(), uri.size(),
                         // onMessage event
@@ -144,7 +157,13 @@ namespace clintrinsics
       [[clang::import_module("clarion"), clang::import_name("listenAcceptor")]] void listen(
           ConnectionAcceptorTag* acceptor,
           void* pOnConnection,
-          void (*fOnConnection)(void* pOnConnection, ConnectionTag* connection));
+          void (*fOnConnection)(void* pOnConnection,
+                                ConnectionTag* connectionTag,
+                                BytesTag* protocol,
+                                BytesTag* remoteAddress,
+                                uint32_t remotePort,
+                                BytesTag* localAddress,
+                                uint32_t localPort));
    }  // namespace imports
 
    struct ConnectionAcceptor : ExternalObject<ConnectionAcceptorTag>
@@ -163,10 +182,19 @@ namespace clintrinsics
       void listen()
       {
          // call acceptor function to start listening
-         imports::listen(handle, this, [](void* p, ConnectionTag* connection) {
-            auto self = (ConnectionAcceptor*)p;
-            self->onConnection(std::make_shared<Connection>(connection));
-         });
+         imports::listen(
+             handle, this,
+             [](void* p, ConnectionTag* connectionTag, BytesTag* protocol, BytesTag* remoteAddress,
+                uint32_t remotePort, BytesTag* localAddress, uint32_t localPort) {
+                auto self = (ConnectionAcceptor*)p;
+                auto connection = std::make_shared<Connection>(connectionTag);
+                connection->protocol = ExternalBytes{protocol}.toText();
+                connection->remoteAddress = ExternalBytes{remoteAddress}.toText();
+                connection->remotePort = remotePort;
+                connection->localAddress = ExternalBytes{localAddress}.toText();
+                connection->localPort = localPort;
+                self->onConnection(connection);
+             });
       }
    };
 

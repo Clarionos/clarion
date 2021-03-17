@@ -5,10 +5,37 @@ import { ClarionConnection } from "@clarionos/bios";
 export class Connection implements ClarionConnection {
     uri: string;
     websocket: WebSocket;
+    protocol: string;
+    remoteAddress: string;
+    remotePort: number;
+    localAddress: string;
+    localPort: number;
 
-    constructor(websocket: WebSocket) {
+    constructor(
+        websocket: WebSocket,
+        protocol: string,
+        remoteAddress: string,
+        remotePort: number,
+        localAddress: string,
+        localPort: number
+    ) {
         this.websocket = websocket;
+        this.protocol = protocol;
+        this.remoteAddress = remoteAddress;
+        this.remotePort = remotePort;
+        this.localAddress = localAddress;
+        this.localPort = localPort;
         this.uri = websocket.url;
+        console.info(
+            "new connection: ",
+            this.websocket.protocol,
+            this.protocol,
+            this.remoteAddress,
+            this.remotePort,
+            this.localAddress,
+            this.localPort,
+            this.uri
+        );
     }
 
     setupOnMessage = (wasmCallback: (data: Uint8Array) => Promise<void>) => {

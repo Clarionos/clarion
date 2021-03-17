@@ -36,6 +36,11 @@ export class MemoryHandler {
         return this.objects[index] as T;
     };
 
+    addString = (str: string) => {
+        const data = new TextEncoder().encode(str);
+        return this.addObj(data);
+    };
+
     wasmCallback = (fnIndex: number, ...params: any): void => {
         const fnTable = this.instance.exports
             .__indirect_function_table as WebAssembly.Table;

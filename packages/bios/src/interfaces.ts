@@ -25,7 +25,12 @@ export interface ClarionDbCursor {
 }
 
 export interface ClarionConnection {
-    uri: string;
+    protocol: string;
+    remoteAddress: string;
+    remotePort: number;
+    localAddress: string;
+    localPort: number;
+
     sendMessage: (data: Uint8Array) => Promise<void>;
     close: () => Promise<void>;
     setupOnMessage: (wasmCallback: (data: Uint8Array) => Promise<void>) => void;

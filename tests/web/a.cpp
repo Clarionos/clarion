@@ -41,7 +41,7 @@ clintrinsics::Task<> testdb()
 
 clintrinsics::Task<> testnet()
 {
-   clintrinsics::Connection myConnection{"ws://localhost:9125"};
+   clintrinsics::Connection myConnection{"ws", "localhost", 9125};
    myConnection.onOpen = []() { printf("connection opened!\n"); };
    myConnection.onMessage = [](clintrinsics::ExternalBytes data) {
       printf("received bytes handle: %p -- size: %d\n", data.handle,
@@ -96,7 +96,10 @@ void setupGlobalAcceptor()
    node.acceptors.emplace(globalAcceptor);
 
    globalAcceptor->onConnection = [](std::shared_ptr<clintrinsics::Connection> connection) {
-      printf("conn(%d/%p) >>> new incoming connection\n", globalAcceptor->port, connection->handle);
+      printf("conn(%d/%p) >>> new incoming connection: ([%s] remote: %s:%d / local: %s:%d)\n",
+             globalAcceptor->port, connection->handle, connection->protocol.c_str(),
+             connection->remoteAddress.c_str(), connection->remotePort,
+             connection->localAddress.c_str(), connection->localPort);
       connection->onMessage = [connection](clintrinsics::ExternalBytes data) {
          auto dataBytes = data.toUint8Vector();
          printf("conn(%d/%p) >>> received bytes handle: %p -- size: %d\n", globalAcceptor->port,

@@ -40,7 +40,21 @@ export class ConnectionManager implements ClarionConnectionManager {
         onError: () => Promise<void>
     ): Promise<Connection> => {
         console.info(">>> creating new ws, connecting to", uri);
-        const connection = new Connection(new WebSocket(uri));
+        const [protocol, address] = uri.split("://", 2);
+        const [remoteAddress, maybeRemotePort] = address.split(":", 2);
+
+        const remotePort =
+            maybeRemotePort || (protocol === "ws" ? "80" : "443");
+
+        const ws = new WebSocket(uri);
+        const connection = new Connection(
+            ws,
+            protocol,
+            remoteAddress,
+            parseInt(remotePort),
+            "",
+            0
+        );
         connection.setupOnMessage(onMessage);
         connection.setupOnClose(onClose);
         connection.setupOnError(onError);

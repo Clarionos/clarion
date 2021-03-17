@@ -3,6 +3,7 @@
 #include "clintrinsics/coroutines.hpp"
 
 #include <cstring>
+#include <string>
 #include <vector>
 
 namespace clintrinsics
@@ -81,6 +82,12 @@ namespace clintrinsics
          std::vector<uint8_t> data(size);
          imports::getObjData(handle, data.data());
          return data;
+      }
+
+      std::string toText()
+      {
+         auto data = toUint8Vector();
+         return std::string(data.begin(), data.end());
       }
    };
 }  // namespace clintrinsics

@@ -7,10 +7,35 @@ import {
 export class ClarionWebSocket implements ClarionConnection {
     uri: string;
     websocket: WebSocket;
+    protocol: string;
+    remoteAddress: string;
+    remotePort: number;
+    localAddress: string;
+    localPort: number;
 
     constructor(websocket: WebSocket) {
         this.websocket = websocket;
+
+        const [protocol, address] = websocket.url.split("://", 2);
+        const [remoteAddress, maybeRemotePort] = address.split(":", 2);
+        const remotePort =
+            maybeRemotePort || (protocol === "ws" ? "80" : "443");
+
+        this.protocol = protocol;
+        this.remoteAddress = remoteAddress;
+        this.remotePort = parseInt(remotePort);
+        this.localAddress = "";
+        this.localPort = 0;
         this.uri = websocket.url;
+        console.info(
+            "new connection: ",
+            this.protocol,
+            this.remoteAddress,
+            this.remotePort,
+            this.localAddress,
+            this.localPort,
+            this.uri
+        );
     }
 
     setupOnMessage = (wasmCallback: (data: Uint8Array) => Promise<void>) => {
