@@ -1,4 +1,5 @@
 #include "clintrinsics/connection.hpp"
+#include "clintrinsics/crypto.hpp"
 #include "clintrinsics/database.hpp"
 
 #include <string>
@@ -23,7 +24,7 @@ clintrinsics::Task<> testco2(uint32_t delayMillisec)
    printf("testco2 finished\n");
 }
 
-clintrinsics::Task<> testdb()
+clintrinsics::Task<> testDb()
 {
    auto db = co_await clintrinsics::openDb("foo");
    printf(">> database handle: %p\n", db.handle);
@@ -39,7 +40,7 @@ clintrinsics::Task<> testdb()
     db.close();
 }
 
-clintrinsics::Task<> testnet()
+clintrinsics::Task<> testNet()
 {
    clintrinsics::Connection myConnection{"ws", "localhost", 9125};
    myConnection.onOpen = []() { printf("connection opened!\n"); };
@@ -59,6 +60,17 @@ clintrinsics::Task<> testnet()
 
    myConnection.close();
    printf(">> connection closed!\n");
+}
+
+clintrinsics::Task<> testCrypto()
+{
+   clintrinsics::PublicKey pubKey;
+   co_await pubKey.create();
+   printf(">> public key created handle %p\n", pubKey.handle);
+
+   std::string message = "hey ho lets go!";
+   auto sha256 = co_await clintrinsics::hash256(message.c_str(), message.size());
+   printf(">> sha256 message size: %d - %s \n", (int)sha256.size(), sha256.toString().c_str());
 }
 
 // todo: move to a proper node file
@@ -145,8 +157,9 @@ void setupGlobalAcceptor()
    // testco("delay 3s", 3000).start();
    // testco2(200).start();
    // testco2(250).start();
-   testdb().start();
-   testnet().start();
+   testDb().start();
+   testNet().start();
+   testCrypto().start();
 }
 
 int main()

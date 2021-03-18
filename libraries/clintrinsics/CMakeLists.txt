@@ -6,6 +6,8 @@ target_sources(clintrinsics INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/clintrinsics/basic.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/clintrinsics/coroutines.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/clintrinsics/database.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/clintrinsics/connection.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/clintrinsics/crypto.hpp
 )
 
 target_sources(clintrinsics PRIVATE

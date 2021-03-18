@@ -4,6 +4,7 @@ import {
     ArgsHandler,
     BasicHandler,
     ConnectionHandler,
+    CryptoHandler,
     DatabaseHandler,
     MemoryHandler,
 } from "./handlers";
@@ -18,6 +19,7 @@ export class Context {
     argsHandler: ArgsHandler;
     databaseHandler: DatabaseHandler;
     connectionHandler: ConnectionHandler;
+    cryptoHandler: CryptoHandler;
 
     constructor(
         args: string[],
@@ -28,6 +30,7 @@ export class Context {
         this.memoryHandler = new MemoryHandler();
         this.argsHandler = new ArgsHandler(this.memoryHandler, args);
         this.basicHandler = new BasicHandler(this.memoryHandler);
+        this.cryptoHandler = new CryptoHandler(this.memoryHandler);
         this.databaseHandler = new DatabaseHandler(
             this.memoryHandler,
             dbManager
@@ -44,6 +47,7 @@ export class Context {
             ...this.basicHandler.imports,
             ...this.databaseHandler.imports,
             ...this.connectionHandler.imports,
+            ...this.cryptoHandler.imports,
         };
         return { clarion };
     };
