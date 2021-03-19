@@ -49,55 +49,46 @@ namespace clintrinsics
 
    struct ExternalCryptoBytes : public ExternalBytes
    {
-      Sha256 toSha256() const
-      {
-         auto bytes = toUint8Vector();
-         Sha256 sha256;
-         if (bytes.size() != sizeof(sha256))
-         {
-            fatal("sha256: size mismatch");
-         }
-         memcpy(&sha256, bytes.data(), bytes.size());
-         return sha256;
-      }
+      Sha256 toSha256() const { return toArrayObject<Sha256>(); }
 
       template <EccCurve Curve>
       EccPublicKey<Curve> toPublicKey() const
       {
-         auto bytes = toUint8Vector();
-         auto size = imports::getObjSize(handle);
-         if (size != 33)
-         {
-            fatal("invalid public key");
-         }
+         return toArrayObject<EccPublicKey<Curve>>();
+      }
 
-         EccPublicKey<Curve> publicKey;
-         imports::getObjData(handle, publicKey.data());
-         return publicKey;
+      template <EccCurve Curve>
+      EccSignature<Curve> toSignature() const
+      {
+         return toArrayObject<EccSignature<Curve>>();
       }
    };
 
    namespace imports
    {
+      // todo: expose synchronous too
       [[clang::import_module("clarion"), clang::import_name("hash256")]] void
       hash256(const void* blob, uint32_t blobLen, void* p, void (*f)(void* p, BytesTag* sha256));
+
+      [[clang::import_module("clarion"), clang::import_name("hash256Sync")]] BytesTag* hash256Sync(
+          const void* blob,
+          uint32_t blobLen);
 
       [[clang::import_module("clarion"), clang::import_name("createKey")]] void
       createKey(EccCurve curve, void* p, void (*f)(void* p, BytesTag* bytesTag));
 
-      // [[clang::import_module("clarion"), clang::import_name("sign")]] void sign(
-      //     const void* publicKey,
-      //     uint32_t publicKeyLen,
-      //     const void* hash,
-      //     uint32_t hashLen,
-      //     void* p,
-      //     void (*f)(void* p, BytesTag* bytesTag));
+      [[clang::import_module("clarion"), clang::import_name("sign")]] void sign(
+          const void* publicKey,
+          uint32_t publicKeyLen,
+          const void* hash,
+          uint32_t hashLen,
+          void* p,
+          void (*f)(void* p, BytesTag* bytesTag));
 
       // TODO:
-      //    public_key recover(signature, hash, optional<public_key>);
-      //    hash hash256(blob);
-      //    shared_secret diffyhelman(public_key local, public_key remote);
-      //    blob aesEncrypt(shared_secret, blob);
+      //  public_key recover(signature, hash, optional<public_key>);
+      //  (sync if possible) shared_secret diffyhelman(public_key local, public_key remote);
+      //  (sync if possible) blob aesEncrypt(shared_secret, blob);
    }  // namespace imports
 
    auto hash256(const void* blob, uint32_t blobLen)
@@ -105,6 +96,12 @@ namespace clintrinsics
       return callExternalAsync<Sha256, imports::hash256>(
           std::tuple{blob, blobLen},
           [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSha256(); });
+   }
+
+   Sha256 hash256Sync(const void* blob, uint32_t blobLen)
+   {
+      auto bytesTag = imports::hash256Sync(blob, blobLen);
+      return ExternalCryptoBytes{bytesTag}.toSha256();
    }
 
    template <EccCurve Curve>
@@ -115,13 +112,12 @@ namespace clintrinsics
           [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toPublicKey<Curve>(); });
    }
 
-   // template <EccPublicKey Key>
-   // auto sign(Key)
-   // {
-   //    return callExternalAsync<PublicKeyType, imports::createKey>(
-   //        std::tuple{curve},
-   //        [curve](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toPublicKey(curve);
-   //        });
-   // }
+   template <EccCurve Curve>
+   auto sign(EccPublicKey<Curve> publicKey, Sha256 hash)
+   {
+      return callExternalAsync<EccSignature<Curve>, imports::sign>(
+          std::tuple{publicKey.begin(), publicKey.size(), hash.begin(), hash.size()},
+          [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSignature<Curve>(); });
+   }
 
 }  // namespace clintrinsics

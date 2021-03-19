@@ -69,6 +69,12 @@ clintrinsics::Task<> testCrypto()
    auto sha256 = co_await clintrinsics::hash256(message.c_str(), message.size());
    printf(">> sha256 message size: %d - %s \n", (int)sha256.size(), sha256.toString().c_str());
 
+   printf("testing synchronous hashing...\n");
+   std::string messageSync = "hey ho lets go! sync";
+   auto sha256Sync = clintrinsics::hash256Sync(messageSync.c_str(), messageSync.size());
+   printf(">> sha256Sync message size: %d - %s \n", (int)sha256Sync.size(),
+          sha256Sync.toString().c_str());
+
    printf("creating new k1 public key...\n");
    auto k1PubKey2 = co_await clintrinsics::createKey<clintrinsics::EccCurve::k1>();
    printf("k1 pubKey third byte >> %c\n", k1PubKey2[2]);
@@ -76,6 +82,8 @@ clintrinsics::Task<> testCrypto()
    printf("creating new r1 public key...\n");
    auto r1PubKey2 = co_await clintrinsics::createKey<clintrinsics::EccCurve::r1>();
    printf("k1 pubKey third byte >> %c\n", r1PubKey2[2]);
+
+   // todo: working on sign...
 }
 
 // todo: move to a proper node file

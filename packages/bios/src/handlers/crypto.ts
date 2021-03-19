@@ -1,4 +1,5 @@
 import crypto from "isomorphic-webcrypto";
+import forge from "node-forge";
 
 import { throwError } from "../error";
 import { MemoryHandler } from "./memory";
@@ -32,9 +33,7 @@ export class CryptoHandler {
         wasmCbIndex: number
     ) => {
         try {
-            const blob = new Uint8Array(
-                this.memoryHandler.uint8Array(blobIndex, blobLen)
-            );
+            const blob = this.memoryHandler.uint8Array(blobIndex, blobLen);
 
             const hashBuffer = await crypto.subtle.digest("SHA-256", blob);
             const hashBytes = new Uint8Array(hashBuffer);
@@ -49,8 +48,26 @@ export class CryptoHandler {
         }
     };
 
+    hash256Sync = (blobIndex: number, blobLen: number) => {
+        try {
+            const buffer = this.memoryHandler.uint8Array(blobIndex, blobLen);
+            const bytes = forge.util.binary.raw.encode(buffer);
+
+            // todo: benchmark forge for sync hash
+            const md = forge.md.sha256.create();
+            md.update(bytes);
+            const hashDigest = md.digest();
+            const hashBytes = forge.util.binary.raw.decode(hashDigest.bytes());
+
+            return this.memoryHandler.addObj(hashBytes);
+        } catch (e) {
+            throwError(e);
+        }
+    };
+
     imports = {
         createKey: this.createKey.bind(this),
         hash256: this.hash256.bind(this),
+        hash256Sync: this.hash256Sync.bind(this),
     };
 }

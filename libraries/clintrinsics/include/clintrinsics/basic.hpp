@@ -93,5 +93,20 @@ namespace clintrinsics
          imports::getObjData(handle, str.data());
          return str;
       }
+
+      template <typename T>
+      T toArrayObject() const
+      {
+         auto size = imports::getObjSize(handle);
+
+         T array;
+         if (size != sizeof(array))
+         {
+            fatal("to array memory size mismatch");
+         }
+
+         imports::getObjData(handle, array.data());
+         return array;
+      }
    };
 }  // namespace clintrinsics
