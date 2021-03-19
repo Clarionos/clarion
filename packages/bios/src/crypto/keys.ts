@@ -9,7 +9,7 @@ export const generateKey = (
     type: KeyType = KeyType.k1,
     ecOptions?: EC.GenKeyPairOptions
 ) => {
-    console.info("generating keytype ", type);
+    console.info("generating keytype ", KeyType[type]);
     let ec;
     if (type === KeyType.k1) {
         ec = new EC("secp256k1") as any;

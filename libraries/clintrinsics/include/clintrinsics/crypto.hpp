@@ -61,7 +61,8 @@ namespace clintrinsics
          return sha256;
       }
 
-      PublicKeyType toPublicKey(EccCurve curve) const
+      template <EccCurve Curve>
+      EccPublicKey<Curve> toPublicKey() const
       {
          auto bytes = toUint8Vector();
          auto size = imports::getObjSize(handle);
@@ -70,20 +71,8 @@ namespace clintrinsics
             fatal("invalid public key");
          }
 
-         PublicKeyType publicKey;
-         switch (curve)
-         {
-            case EccCurve::k1:
-               publicKey = EccPublicKey<k1>{};
-               break;
-            case EccCurve::r1:
-               publicKey = EccPublicKey<r1>{};
-               break;
-            default:
-               fatal("unknown key curve");
-         }
-         std::visit([&](auto&& keyValue) { imports::getObjData(handle, keyValue.data()); },
-                    publicKey);
+         EccPublicKey<Curve> publicKey;
+         imports::getObjData(handle, publicKey.data());
          return publicKey;
       }
    };
@@ -96,8 +85,15 @@ namespace clintrinsics
       [[clang::import_module("clarion"), clang::import_name("createKey")]] void
       createKey(EccCurve curve, void* p, void (*f)(void* p, BytesTag* bytesTag));
 
+      // [[clang::import_module("clarion"), clang::import_name("sign")]] void sign(
+      //     const void* publicKey,
+      //     uint32_t publicKeyLen,
+      //     const void* hash,
+      //     uint32_t hashLen,
+      //     void* p,
+      //     void (*f)(void* p, BytesTag* bytesTag));
+
       // TODO:
-      //    signature sign(public_key, hash);
       //    public_key recover(signature, hash, optional<public_key>);
       //    hash hash256(blob);
       //    shared_secret diffyhelman(public_key local, public_key remote);
@@ -111,11 +107,21 @@ namespace clintrinsics
           [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSha256(); });
    }
 
-   auto createKey(EccCurve curve)
+   template <EccCurve Curve>
+   auto createKey()
    {
-      return callExternalAsync<PublicKeyType, imports::createKey>(
-          std::tuple{curve},
-          [curve](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toPublicKey(curve); });
+      return callExternalAsync<EccPublicKey<Curve>, imports::createKey>(
+          std::tuple{Curve},
+          [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toPublicKey<Curve>(); });
    }
+
+   // template <EccPublicKey Key>
+   // auto sign(Key)
+   // {
+   //    return callExternalAsync<PublicKeyType, imports::createKey>(
+   //        std::tuple{curve},
+   //        [curve](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toPublicKey(curve);
+   //        });
+   // }
 
 }  // namespace clintrinsics
