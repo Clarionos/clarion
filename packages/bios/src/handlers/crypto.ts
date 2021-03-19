@@ -1,3 +1,5 @@
+import crypto from "isomorphic-webcrypto";
+
 import { throwError } from "../error";
 import { MemoryHandler } from "./memory";
 
@@ -33,17 +35,11 @@ export class CryptoHandler {
             const hashBuffer = await crypto.subtle.digest("SHA-256", blob);
             const hashBytes = new Uint8Array(hashBuffer);
 
-            const hashHex = Array.from(hashBytes)
-                .map((b) => ("00" + b.toString(16)).slice(-2))
-                .join("");
-            console.info("hash blob", blob, hashHex);
-
             this.memoryHandler.wasmCallback(
                 wasmCbIndex,
                 wasmCbPtr,
                 this.memoryHandler.addObj(hashBytes)
             );
-            return hashHex;
         } catch (e) {
             throwError(e);
         }

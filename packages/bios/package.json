@@ -19,5 +19,7 @@
         "rimraf": "~3.0.2",
         "typescript": "~4.2.0"
     },
-    "dependencies": {}
+    "dependencies": {
+        "isomorphic-webcrypto": "^2.3.8"
+    }
 }
