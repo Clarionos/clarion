@@ -1,4 +1,5 @@
 export * from "./interfaces";
+import "./polyfills";
 
 import {
     ArgsHandler,

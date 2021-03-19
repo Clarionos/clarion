@@ -64,13 +64,20 @@ clintrinsics::Task<> testNet()
 
 clintrinsics::Task<> testCrypto()
 {
-   clintrinsics::PublicKey pubKey;
-   co_await pubKey.create();
-   printf(">> public key created handle %p\n", pubKey.handle);
-
+   printf("testing hashing...\n");
    std::string message = "hey ho lets go!";
    auto sha256 = co_await clintrinsics::hash256(message.c_str(), message.size());
    printf(">> sha256 message size: %d - %s \n", (int)sha256.size(), sha256.toString().c_str());
+
+   printf("creating new k1 public key...\n");
+   auto pubKey1 = co_await clintrinsics::createKey(clintrinsics::EccCurve::k1);
+   auto k1PubKey = std::get<clintrinsics::EccCurve::k1>(pubKey1);
+   printf("k1 pubKey third byte >> %c\n", k1PubKey[2]);
+
+   printf("creating new r1 public key...\n");
+   auto pubKey2 = co_await clintrinsics::createKey(clintrinsics::EccCurve::r1);
+   auto r1PubKey = std::get<clintrinsics::EccCurve::r1>(pubKey2);
+   printf("k1 pubKey third byte >> %c\n", r1PubKey[2]);
 }
 
 // todo: move to a proper node file
@@ -157,8 +164,8 @@ void setupGlobalAcceptor()
    // testco("delay 3s", 3000).start();
    // testco2(200).start();
    // testco2(250).start();
-   testDb().start();
-   testNet().start();
+   // testDb().start();
+   // testNet().start();
    testCrypto().start();
 }
 

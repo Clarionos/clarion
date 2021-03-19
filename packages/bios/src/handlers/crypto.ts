@@ -2,6 +2,7 @@ import crypto from "isomorphic-webcrypto";
 
 import { throwError } from "../error";
 import { MemoryHandler } from "./memory";
+import { generateKey, KeyType } from "../crypto";
 
 export class CryptoHandler {
     memoryHandler: MemoryHandler;
@@ -10,11 +11,14 @@ export class CryptoHandler {
         this.memoryHandler = memoryHandler;
     }
 
-    createKey = async (wasmCbPtr: number, wasmCbIndex: number) => {
+    createKey = async (
+        keyType: KeyType,
+        wasmCbPtr: number,
+        wasmCbIndex: number
+    ) => {
         try {
-            const createdKey = this.memoryHandler.addObj(
-                "todo: implement createKey"
-            );
+            const keyPair = generateKey(keyType);
+            const createdKey = this.memoryHandler.addObj(keyPair.publicKeyData);
             this.memoryHandler.wasmCallback(wasmCbIndex, wasmCbPtr, createdKey);
         } catch (e) {
             throwError(e);

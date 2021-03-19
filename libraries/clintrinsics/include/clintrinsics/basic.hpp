@@ -77,7 +77,7 @@ namespace clintrinsics
 
    struct ExternalBytes : ExternalObject<BytesTag>
    {
-      std::vector<uint8_t> toUint8Vector()
+      std::vector<uint8_t> toUint8Vector() const
       {
          auto size = imports::getObjSize(handle);
          std::vector<uint8_t> data(size);
@@ -85,7 +85,7 @@ namespace clintrinsics
          return data;
       }
 
-      std::string toString()
+      std::string toString() const
       {
          auto size = imports::getObjSize(handle);
          std::string str;

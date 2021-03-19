@@ -4,6 +4,7 @@
         "target": "ES2015",
         "sourceMap": true,
         "noEmitOnError": true,
+        "skipLibCheck": true,
         "esModuleInterop": true
     },
 

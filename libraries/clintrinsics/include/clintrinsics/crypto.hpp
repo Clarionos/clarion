@@ -13,7 +13,7 @@ namespace clintrinsics
    {
       using array<uint64_t, 4>::array;
 
-      std::string toString()
+      std::string toString() const
       {
          auto d = (char*)this;
          auto s = sizeof(*this);
@@ -25,34 +25,6 @@ namespace clintrinsics
          return r;
       }
    };
-
-   struct ExternalCryptoBytes : public ExternalBytes
-   {
-      Sha256 toSha256()
-      {
-         auto bytes = toUint8Vector();
-         Sha256 sha256;
-         if (bytes.size() != sizeof(sha256))
-         {
-            fatal("sha256: size mismatch");
-         }
-         memcpy(&sha256, bytes.data(), bytes.size());
-         return sha256;
-      }
-   };
-
-   namespace imports
-   {
-      [[clang::import_module("clarion"), clang::import_name("hash256")]] void
-      hash256(const void* blob, uint32_t blobLen, void* p, void (*f)(void* p, BytesTag* sha256));
-   }
-
-   auto hash256(const void* blob, uint32_t blobLen)
-   {
-      return callExternalAsync<Sha256, imports::hash256>(
-          std::tuple{blob, blobLen},
-          [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSha256(); });
-   }
 
    enum EccCurve
    {
@@ -75,13 +47,54 @@ namespace clintrinsics
    using PublicKeyType = variant<EccPublicKey<k1>, EccPublicKey<r1>>;
    using SignatureType = variant<EccSignature<k1>, EccSignature<r1>>;
 
-   struct PublicKeyTag;
+   struct ExternalCryptoBytes : public ExternalBytes
+   {
+      Sha256 toSha256() const
+      {
+         auto bytes = toUint8Vector();
+         Sha256 sha256;
+         if (bytes.size() != sizeof(sha256))
+         {
+            fatal("sha256: size mismatch");
+         }
+         memcpy(&sha256, bytes.data(), bytes.size());
+         return sha256;
+      }
+
+      PublicKeyType toPublicKey(EccCurve curve) const
+      {
+         auto bytes = toUint8Vector();
+         auto size = imports::getObjSize(handle);
+         if (size != 33)
+         {
+            fatal("invalid public key");
+         }
+
+         PublicKeyType publicKey;
+         switch (curve)
+         {
+            case EccCurve::k1:
+               publicKey = EccPublicKey<k1>{};
+               break;
+            case EccCurve::r1:
+               publicKey = EccPublicKey<r1>{};
+               break;
+            default:
+               fatal("unknown key curve");
+         }
+         std::visit([&](auto&& keyValue) { imports::getObjData(handle, keyValue.data()); },
+                    publicKey);
+         return publicKey;
+      }
+   };
 
    namespace imports
    {
-      [[clang::import_module("clarion"), clang::import_name("createKey")]] void createKey(
-          void* p,
-          void (*f)(void* p, PublicKeyTag* publicKey));
+      [[clang::import_module("clarion"), clang::import_name("hash256")]] void
+      hash256(const void* blob, uint32_t blobLen, void* p, void (*f)(void* p, BytesTag* sha256));
+
+      [[clang::import_module("clarion"), clang::import_name("createKey")]] void
+      createKey(EccCurve curve, void* p, void (*f)(void* p, BytesTag* bytesTag));
 
       // TODO:
       //    signature sign(public_key, hash);
@@ -89,20 +102,20 @@ namespace clintrinsics
       //    hash hash256(blob);
       //    shared_secret diffyhelman(public_key local, public_key remote);
       //    blob aesEncrypt(shared_secret, blob);
-
    }  // namespace imports
 
-   struct PublicKey : ExternalObject<PublicKeyTag>
+   auto hash256(const void* blob, uint32_t blobLen)
    {
-      using ExternalObject<PublicKeyTag>::ExternalObject;
+      return callExternalAsync<Sha256, imports::hash256>(
+          std::tuple{blob, blobLen},
+          [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSha256(); });
+   }
 
-      PublicKeyType publicKey;
-
-      auto create()
-      {
-         return callExternalAsync<void, imports::createKey>(
-             std::tuple{}, [this](PublicKeyTag* pubKey) { this->handle = pubKey; });
-      }
-   };
+   auto createKey(EccCurve curve)
+   {
+      return callExternalAsync<PublicKeyType, imports::createKey>(
+          std::tuple{curve},
+          [curve](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toPublicKey(curve); });
+   }
 
 }  // namespace clintrinsics
