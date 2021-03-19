@@ -1,4 +1,5 @@
 #include "clintrinsics/connection.hpp"
+#include "clintrinsics/crypto.hpp"
 #include "clintrinsics/database.hpp"
 
 #include <string>
@@ -23,7 +24,7 @@ clintrinsics::Task<> testco2(uint32_t delayMillisec)
    printf("testco2 finished\n");
 }
 
-clintrinsics::Task<> testdb()
+clintrinsics::Task<> testDb()
 {
    auto db = co_await clintrinsics::openDb("foo");
    printf(">> database handle: %p\n", db.handle);
@@ -39,7 +40,7 @@ clintrinsics::Task<> testdb()
     db.close();
 }
 
-clintrinsics::Task<> testnet()
+clintrinsics::Task<> testNet()
 {
    clintrinsics::Connection myConnection{"ws", "localhost", 9125};
    myConnection.onOpen = []() { printf("connection opened!\n"); };
@@ -59,6 +60,30 @@ clintrinsics::Task<> testnet()
 
    myConnection.close();
    printf(">> connection closed!\n");
+}
+
+clintrinsics::Task<> testCrypto()
+{
+   printf("testing hashing...\n");
+   std::string message = "hey ho lets go!";
+   auto sha256 = co_await clintrinsics::hash256(message.c_str(), message.size());
+   printf(">> sha256 message size: %d - %s \n", (int)sha256.size(), sha256.toString().c_str());
+
+   printf("testing synchronous hashing...\n");
+   std::string messageSync = "hey ho lets go! sync";
+   auto sha256Sync = clintrinsics::hash256Sync(messageSync.c_str(), messageSync.size());
+   printf(">> sha256Sync message size: %d - %s \n", (int)sha256Sync.size(),
+          sha256Sync.toString().c_str());
+
+   printf("creating new k1 public key...\n");
+   auto k1PubKey2 = co_await clintrinsics::createKey<clintrinsics::EccCurve::k1>();
+   printf("k1 pubKey third byte >> %c\n", k1PubKey2[2]);
+
+   printf("creating new r1 public key...\n");
+   auto r1PubKey2 = co_await clintrinsics::createKey<clintrinsics::EccCurve::r1>();
+   printf("k1 pubKey third byte >> %c\n", r1PubKey2[2]);
+
+   // todo: working on sign...
 }
 
 // todo: move to a proper node file
@@ -145,8 +170,9 @@ void setupGlobalAcceptor()
    // testco("delay 3s", 3000).start();
    // testco2(200).start();
    // testco2(250).start();
-   testdb().start();
-   testnet().start();
+   // testDb().start();
+   // testNet().start();
+   testCrypto().start();
 }
 
 int main()

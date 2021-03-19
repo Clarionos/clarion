@@ -188,10 +188,10 @@ namespace clintrinsics
                 uint32_t remotePort, BytesTag* localAddress, uint32_t localPort) {
                 auto self = (ConnectionAcceptor*)p;
                 auto connection = std::make_shared<Connection>(connectionTag);
-                connection->protocol = ExternalBytes{protocol}.toText();
-                connection->remoteAddress = ExternalBytes{remoteAddress}.toText();
+                connection->protocol = ExternalBytes{protocol}.toString();
+                connection->remoteAddress = ExternalBytes{remoteAddress}.toString();
                 connection->remotePort = remotePort;
-                connection->localAddress = ExternalBytes{localAddress}.toText();
+                connection->localAddress = ExternalBytes{localAddress}.toString();
                 connection->localPort = localPort;
                 self->onConnection(connection);
              });

@@ -2,6 +2,7 @@
 
 #include "clintrinsics/coroutines.hpp"
 
+#include <array>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -76,7 +77,7 @@ namespace clintrinsics
 
    struct ExternalBytes : ExternalObject<BytesTag>
    {
-      std::vector<uint8_t> toUint8Vector()
+      std::vector<uint8_t> toUint8Vector() const
       {
          auto size = imports::getObjSize(handle);
          std::vector<uint8_t> data(size);
@@ -84,10 +85,28 @@ namespace clintrinsics
          return data;
       }
 
-      std::string toText()
+      std::string toString() const
       {
-         auto data = toUint8Vector();
-         return std::string(data.begin(), data.end());
+         auto size = imports::getObjSize(handle);
+         std::string str;
+         str.reserve(size);
+         imports::getObjData(handle, str.data());
+         return str;
+      }
+
+      template <typename T>
+      T toArrayObject() const
+      {
+         auto size = imports::getObjSize(handle);
+
+         T array;
+         if (size != sizeof(array))
+         {
+            fatal("to array memory size mismatch");
+         }
+
+         imports::getObjData(handle, array.data());
+         return array;
       }
    };
 }  // namespace clintrinsics
