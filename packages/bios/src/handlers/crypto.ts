@@ -1,9 +1,13 @@
-import crypto from "isomorphic-webcrypto";
-import forge from "node-forge";
-
 import { throwError } from "../error";
 import { MemoryHandler } from "./memory";
-import { generateKey, KeyType } from "../crypto";
+import {
+    generateKey,
+    getKeyPair,
+    KeyType,
+    sha256,
+    sha256Sync,
+    sign,
+} from "../crypto";
 
 export class CryptoHandler {
     memoryHandler: MemoryHandler;
@@ -18,15 +22,15 @@ export class CryptoHandler {
         wasmCbIndex: number
     ) => {
         try {
-            const keyPair = generateKey(keyType);
-            const createdKey = this.memoryHandler.addObj(keyPair.publicKeyData);
+            const keyPair = await generateKey(keyType);
+            const createdKey = this.memoryHandler.addObj(keyPair.publicKey);
             this.memoryHandler.wasmCallback(wasmCbIndex, wasmCbPtr, createdKey);
         } catch (e) {
             throwError(e);
         }
     };
 
-    hash256 = async (
+    sha256 = async (
         blobIndex: number,
         blobLen: number,
         wasmCbPtr: number,
@@ -34,10 +38,7 @@ export class CryptoHandler {
     ) => {
         try {
             const blob = this.memoryHandler.uint8Array(blobIndex, blobLen);
-
-            const hashBuffer = await crypto.subtle.digest("SHA-256", blob);
-            const hashBytes = new Uint8Array(hashBuffer);
-
+            const hashBytes = await sha256(blob);
             this.memoryHandler.wasmCallback(
                 wasmCbIndex,
                 wasmCbPtr,
@@ -48,18 +49,44 @@ export class CryptoHandler {
         }
     };
 
-    hash256Sync = (blobIndex: number, blobLen: number) => {
+    sha256Sync = (blobIndex: number, blobLen: number) => {
         try {
-            const buffer = this.memoryHandler.uint8Array(blobIndex, blobLen);
-            const bytes = forge.util.binary.raw.encode(buffer);
-
-            // todo: benchmark forge for sync hash
-            const md = forge.md.sha256.create();
-            md.update(bytes);
-            const hashDigest = md.digest();
-            const hashBytes = forge.util.binary.raw.decode(hashDigest.bytes());
-
+            const blob = this.memoryHandler.uint8Array(blobIndex, blobLen);
+            const hashBytes = sha256Sync(blob);
             return this.memoryHandler.addObj(hashBytes);
+        } catch (e) {
+            throwError(e);
+        }
+    };
+
+    sign = async (
+        publicKeyIndex: number,
+        publicKeyLen: number,
+        digestIndex: number,
+        digestLen: number,
+        wasmCbPtr: number,
+        wasmCbIndex: number
+    ) => {
+        try {
+            const publicKeyBytes = this.memoryHandler.uint8Array(
+                publicKeyIndex,
+                publicKeyLen
+            );
+
+            const keyPair = getKeyPair(publicKeyBytes);
+
+            const digestBytes = this.memoryHandler.uint8Array(
+                digestIndex,
+                digestLen
+            );
+
+            const signedBytes = await sign(keyPair, digestBytes);
+
+            this.memoryHandler.wasmCallback(
+                wasmCbIndex,
+                wasmCbPtr,
+                this.memoryHandler.addObj(signedBytes)
+            );
         } catch (e) {
             throwError(e);
         }
@@ -67,7 +94,8 @@ export class CryptoHandler {
 
     imports = {
         createKey: this.createKey.bind(this),
-        hash256: this.hash256.bind(this),
-        hash256Sync: this.hash256Sync.bind(this),
+        sha256: this.sha256.bind(this),
+        sha256Sync: this.sha256Sync.bind(this),
+        sign: this.sign.bind(this),
     };
 }

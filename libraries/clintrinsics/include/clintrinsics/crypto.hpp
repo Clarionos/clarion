@@ -13,6 +13,9 @@ namespace clintrinsics
    {
       using array<uint64_t, 4>::array;
 
+      char* data() const { return (char*)this; }
+      size_t data_size() const { return 256 / 8; }
+
       std::string toString() const
       {
          auto d = (char*)this;
@@ -67,10 +70,10 @@ namespace clintrinsics
    namespace imports
    {
       // todo: expose synchronous too
-      [[clang::import_module("clarion"), clang::import_name("hash256")]] void
-      hash256(const void* blob, uint32_t blobLen, void* p, void (*f)(void* p, BytesTag* sha256));
+      [[clang::import_module("clarion"), clang::import_name("sha256")]] void
+      sha256(const void* blob, uint32_t blobLen, void* p, void (*f)(void* p, BytesTag* sha256));
 
-      [[clang::import_module("clarion"), clang::import_name("hash256Sync")]] BytesTag* hash256Sync(
+      [[clang::import_module("clarion"), clang::import_name("sha256Sync")]] BytesTag* sha256Sync(
           const void* blob,
           uint32_t blobLen);
 
@@ -91,16 +94,16 @@ namespace clintrinsics
       //  (sync if possible) blob aesEncrypt(shared_secret, blob);
    }  // namespace imports
 
-   auto hash256(const void* blob, uint32_t blobLen)
+   auto sha256(const void* blob, uint32_t blobLen)
    {
-      return callExternalAsync<Sha256, imports::hash256>(
+      return callExternalAsync<Sha256, imports::sha256>(
           std::tuple{blob, blobLen},
           [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSha256(); });
    }
 
-   Sha256 hash256Sync(const void* blob, uint32_t blobLen)
+   Sha256 sha256Sync(const void* blob, uint32_t blobLen)
    {
-      auto bytesTag = imports::hash256Sync(blob, blobLen);
+      auto bytesTag = imports::sha256Sync(blob, blobLen);
       return ExternalCryptoBytes{bytesTag}.toSha256();
    }
 
@@ -113,10 +116,10 @@ namespace clintrinsics
    }
 
    template <EccCurve Curve>
-   auto sign(EccPublicKey<Curve> publicKey, Sha256 hash)
+   auto sign(const EccPublicKey<Curve>& publicKey, const Sha256& hash)
    {
       return callExternalAsync<EccSignature<Curve>, imports::sign>(
-          std::tuple{publicKey.begin(), publicKey.size(), hash.begin(), hash.size()},
+          std::tuple{publicKey.begin(), publicKey.size(), hash.data(), hash.data_size()},
           [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSignature<Curve>(); });
    }
 

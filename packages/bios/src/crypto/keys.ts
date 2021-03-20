@@ -1,38 +1,43 @@
-import { ec as EC } from "elliptic";
+import { ec } from "elliptic";
+import { KeyPair, KeyType } from "./interfaces";
 
-export enum KeyType {
-    k1 = 0,
-    r1 = 1,
-}
+const keyPairs = new Map<string, KeyPair>();
 
-export const generateKey = (
+export const generateKey = async (
     type: KeyType = KeyType.k1,
-    ecOptions?: EC.GenKeyPairOptions
-) => {
-    console.info("generating keytype ", KeyType[type]);
-    let ec;
-    if (type === KeyType.k1) {
-        ec = new EC("secp256k1") as any;
-    } else {
-        ec = new EC("p256") as any;
+    ecOptions?: ec.GenKeyPairOptions
+): Promise<KeyPair> => {
+    const keyPair = constructKeyPair(type, ecOptions);
+    console.info("!!!!!!!!!!!!! generated keypair", keyPair);
+
+    // todo: save the keys to a proper storage... in fact we should not have to generate
+    // the keys with this function, this is merely for tests and we should use hardware keys
+    keyPairs.set(keyPair.publicKey.toString(), keyPair);
+
+    return keyPair;
+};
+
+export const getKeyPair = (publicKey: Uint8Array): KeyPair => {
+    const keyPair = keyPairs.get(publicKey.toString());
+    if (!keyPair) {
+        throw new Error("fail to locate required public key");
     }
+    return keyPair;
+};
+
+const constructKeyPair = (
+    type: KeyType = KeyType.k1,
+    ecOptions?: ec.GenKeyPairOptions
+): KeyPair => {
+    console.info("generating keytype ", KeyType[type]);
+    const elliptic = new ec(type === KeyType.k1 ? "secp256k1" : "p256");
 
     // todo: replace with a proper wallet management
-    const keyPair = ec.genKeyPair(ecOptions);
-    const publicKeyData = constructPublicKeyData(keyPair.getPublic());
-    const privateKeyData = constructPrivateKeyData(keyPair.getPrivate());
-    console.info(
-        "!!!!!!!!!!!!! generated keypair",
-        "priv",
-        privateKeyData,
-        "public",
-        publicKeyData
-    );
+    const ecKeyPair = elliptic.genKeyPair(ecOptions);
+    const publicKey = constructPublicKeyData(ecKeyPair.getPublic());
+    const privateKey = constructPrivateKeyData(ecKeyPair.getPrivate());
 
-    return {
-        privateKeyData,
-        publicKeyData,
-    };
+    return { type, publicKey, privateKey, ecKeyPair };
 };
 
 const constructPublicKeyData = (publicKey): Uint8Array => {
