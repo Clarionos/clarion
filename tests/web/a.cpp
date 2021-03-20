@@ -66,24 +66,56 @@ clintrinsics::Task<> testCrypto()
 {
    printf("testing hashing...\n");
    std::string message = "hey ho lets go!";
-   auto sha256 = co_await clintrinsics::hash256(message.c_str(), message.size());
+   auto sha256 = co_await clintrinsics::sha256(message.c_str(), message.size());
    printf(">> sha256 message size: %d - %s \n", (int)sha256.size(), sha256.toString().c_str());
+   if (sha256.toString() != "d37382f283e176ca61031f07fbd857cb5a7dbfc4b327ef59654d5f9bf5022291")
+   {
+      clintrinsics::fatal("sha256 incorrect hash\n");
+   }
 
    printf("testing synchronous hashing...\n");
    std::string messageSync = "hey ho lets go! sync";
-   auto sha256Sync = clintrinsics::hash256Sync(messageSync.c_str(), messageSync.size());
+   auto sha256Sync = clintrinsics::sha256Sync(messageSync.c_str(), messageSync.size());
    printf(">> sha256Sync message size: %d - %s \n", (int)sha256Sync.size(),
           sha256Sync.toString().c_str());
+   if (sha256Sync.toString() != "ff0403bbd051115a255e5bc9fccc4b90c2906c76f0601bcd4a11ad242f91efac")
+   {
+      clintrinsics::fatal("sha256 incorrect hash\n");
+   }
 
-   printf("creating new k1 public key...\n");
-   auto k1PubKey2 = co_await clintrinsics::createKey<clintrinsics::EccCurve::k1>();
-   printf("k1 pubKey third byte >> %c\n", k1PubKey2[2]);
+   printf("creating new K1 public key...\n");
+   auto k1PubKey = co_await clintrinsics::createKey<clintrinsics::EccCurve::k1>();
+   printf("k1 pubKey third byte >> %c\n", k1PubKey[2]);
 
    printf("creating new r1 public key...\n");
-   auto r1PubKey2 = co_await clintrinsics::createKey<clintrinsics::EccCurve::r1>();
-   printf("k1 pubKey third byte >> %c\n", r1PubKey2[2]);
+   auto r1PubKey = co_await clintrinsics::createKey<clintrinsics::EccCurve::r1>();
+   printf("k1 pubKey third byte >> %c\n", r1PubKey[2]);
 
-   // todo: working on sign...
+   auto signatureK1 = co_await clintrinsics::sign<clintrinsics::EccCurve::k1>(k1PubKey, sha256);
+   printf("signedk1 message third byte >> %c\n", signatureK1[2]);
+
+   auto recoveredK1 = co_await clintrinsics::recover(signatureK1, sha256);
+   if (recoveredK1 != k1PubKey)
+   {
+      clintrinsics::fatal("fail to recover K1pubkey\n");
+   }
+   else
+   {
+      printf("recovered K1 key from signature K1!\n");
+   }
+
+   auto signatureR1 = co_await clintrinsics::sign<clintrinsics::EccCurve::r1>(r1PubKey, sha256);
+   printf("signedr1 message third byte >> %c\n", signatureR1[2]);
+
+   auto recoveredR1 = co_await clintrinsics::recover(signatureR1, sha256);
+   if (recoveredR1 != r1PubKey)
+   {
+      clintrinsics::fatal("fail to recover R1pubkey\n");
+   }
+   else
+   {
+      printf("recovered R1 key from signature R1!\n");
+   }
 }
 
 // todo: move to a proper node file

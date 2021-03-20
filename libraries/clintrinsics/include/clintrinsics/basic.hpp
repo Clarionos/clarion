@@ -102,7 +102,7 @@ namespace clintrinsics
          T array;
          if (size != sizeof(array))
          {
-            fatal("to array memory size mismatch");
+            fatal("to array memory size mismatch\n");
          }
 
          imports::getObjData(handle, array.data());
