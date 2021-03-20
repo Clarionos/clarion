@@ -88,8 +88,17 @@ namespace clintrinsics
           void* p,
           void (*f)(void* p, BytesTag* bytesTag));
 
+      [[clang::import_module("clarion"), clang::import_name("recover")]] void recover(
+          EccCurve curve,
+          const void* signature,
+          uint32_t signatureLen,
+          const void* hash,
+          uint32_t hashLen,
+          void* p,
+          void (*f)(void* p, BytesTag* bytesTag));
+
       // TODO:
-      //  public_key recover(signature, hash, optional<public_key>);
+      //  public_key recover(signature, hash, optional<public_key>); // todo: optional publickey?
       //  (sync if possible) shared_secret diffyhelman(public_key local, public_key remote);
       //  (sync if possible) blob aesEncrypt(shared_secret, blob);
    }  // namespace imports
@@ -121,6 +130,14 @@ namespace clintrinsics
       return callExternalAsync<EccSignature<Curve>, imports::sign>(
           std::tuple{publicKey.begin(), publicKey.size(), hash.data(), hash.data_size()},
           [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSignature<Curve>(); });
+   }
+
+   template <EccCurve Curve>
+   auto recover(const EccSignature<Curve>& signature, const Sha256& hash)
+   {
+      return callExternalAsync<EccPublicKey<Curve>, imports::recover>(
+          std::tuple{Curve, signature.begin(), signature.size(), hash.data(), hash.data_size()},
+          [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toPublicKey<Curve>(); });
    }
 
 }  // namespace clintrinsics

@@ -22,6 +22,7 @@
         "typescript": "~4.2.0"
     },
     "dependencies": {
+        "bn.js": "^5.2.0",
         "buffer": "^6.0.3",
         "elliptic": "^6.5.4",
         "hash.js": "^1.1.7",

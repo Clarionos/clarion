@@ -1,4 +1,6 @@
-import { ec } from "elliptic";
+import { ec, curve } from "elliptic";
+import BN from "bn.js";
+
 import { KeyPair, KeyType } from "./interfaces";
 
 const keyPairs = new Map<string, KeyPair>();
@@ -30,22 +32,24 @@ const constructKeyPair = (
     ecOptions?: ec.GenKeyPairOptions
 ): KeyPair => {
     console.info("generating keytype ", KeyType[type]);
-    const elliptic = new ec(type === KeyType.k1 ? "secp256k1" : "p256");
+    const curve = new ec(type === KeyType.k1 ? "secp256k1" : "p256");
 
     // todo: replace with a proper wallet management
-    const ecKeyPair = elliptic.genKeyPair(ecOptions);
+    const ecKeyPair = curve.genKeyPair(ecOptions);
     const publicKey = constructPublicKeyData(ecKeyPair.getPublic());
     const privateKey = constructPrivateKeyData(ecKeyPair.getPrivate());
 
     return { type, publicKey, privateKey, ecKeyPair };
 };
 
-const constructPublicKeyData = (publicKey): Uint8Array => {
+export const constructPublicKeyData = (
+    publicKey: curve.base.BasePoint
+): Uint8Array => {
     const x = publicKey.getX().toArray("be", 32);
     const y = publicKey.getY().toArray("be", 32);
     return new Uint8Array([y[31] & 1 ? 3 : 2].concat(x));
 };
 
-const constructPrivateKeyData = (privateKey): Uint8Array => {
+const constructPrivateKeyData = (privateKey: BN): Uint8Array => {
     return privateKey.toArrayLike(Buffer, "be", 32);
 };
