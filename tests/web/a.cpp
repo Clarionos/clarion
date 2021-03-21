@@ -263,8 +263,8 @@ void setupGlobalAcceptor()
    // testco("delay 3s", 3000).start();
    // testco2(200).start();
    // testco2(250).start();
-   // testDb().start();
-   // testNet().start();
+   testDb().start();
+   testNet().start();
    testCrypto().start();
 }
 

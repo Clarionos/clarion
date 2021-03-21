@@ -60,23 +60,6 @@ namespace clintrinsics
    using PublicKeyType = variant<EccPublicKey<k1>, EccPublicKey<r1>>;
    using SignatureType = variant<EccSignature<k1>, EccSignature<r1>>;
 
-   struct ExternalCryptoBytes : public ExternalBytes
-   {
-      Sha256 toSha256() const { return toArrayObject<Sha256>(); }
-
-      template <EccCurve Curve>
-      EccPublicKey<Curve> toPublicKey() const
-      {
-         return toArrayObject<EccPublicKey<Curve>>();
-      }
-
-      template <EccCurve Curve>
-      EccSignature<Curve> toSignature() const
-      {
-         return toArrayObject<EccSignature<Curve>>();
-      }
-   };
-
    namespace imports
    {
       // todo: expose synchronous too
@@ -147,13 +130,13 @@ namespace clintrinsics
    {
       return callExternalAsync<Sha256, imports::sha256>(
           std::tuple{blob, blobLen},
-          [](BytesTag* sha256) { return ExternalCryptoBytes{sha256}.toArrayObject<Sha256>(); });
+          [](BytesTag* sha256) { return ExternalBytes{sha256}.toArrayObject<Sha256>(); });
    }
 
    Sha256 sha256Sync(const void* blob, uint32_t blobLen)
    {
       auto sha256 = imports::sha256Sync(blob, blobLen);
-      return ExternalCryptoBytes{sha256}.toArrayObject<Sha256>();
+      return ExternalBytes{sha256}.toArrayObject<Sha256>();
    }
 
    template <EccCurve Curve>
@@ -161,7 +144,7 @@ namespace clintrinsics
    {
       return callExternalAsync<EccPublicKey<Curve>, imports::createKey>(
           std::tuple{Curve}, [](BytesTag* publicKey) {
-             return ExternalCryptoBytes{publicKey}.toArrayObject<EccPublicKey<Curve>>();
+             return ExternalBytes{publicKey}.toArrayObject<EccPublicKey<Curve>>();
           });
    }
 
@@ -171,7 +154,7 @@ namespace clintrinsics
       return callExternalAsync<EccSignature<Curve>, imports::sign>(
           std::tuple{publicKey.begin(), publicKey.size(), hash.data(), hash.data_size()},
           [](BytesTag* signature) {
-             return ExternalCryptoBytes{signature}.toArrayObject<EccSignature<Curve>>();
+             return ExternalBytes{signature}.toArrayObject<EccSignature<Curve>>();
           });
    }
 
@@ -181,7 +164,7 @@ namespace clintrinsics
       return callExternalAsync<EccPublicKey<Curve>, imports::recover>(
           std::tuple{Curve, signature.begin(), signature.size(), hash.data(), hash.data_size()},
           [](BytesTag* publicKey) {
-             return ExternalCryptoBytes{publicKey}.toArrayObject<EccPublicKey<Curve>>();
+             return ExternalBytes{publicKey}.toArrayObject<EccPublicKey<Curve>>();
           });
    }
 
@@ -193,14 +176,14 @@ namespace clintrinsics
           std::tuple{Curve, localPublicKey.begin(), localPublicKey.size(), remotePublicKey.begin(),
                      remotePublicKey.size()},
           [](BytesTag* ecdhSharedSecret) {
-             return ExternalCryptoBytes{ecdhSharedSecret}.toArrayObject<EcdhSharedSecret>();
+             return ExternalBytes{ecdhSharedSecret}.toArrayObject<EcdhSharedSecret>();
           });
    }
 
    AesCbcIv randomAesCbcIv()
    {
       auto iv = imports::randomAesCbcIv();
-      return ExternalCryptoBytes{iv}.toArrayObject<AesCbcIv>();
+      return ExternalBytes{iv}.toArrayObject<AesCbcIv>();
    }
 
    auto aesCbcEncrypt(const EcdhSharedSecret& sharedSecret,
