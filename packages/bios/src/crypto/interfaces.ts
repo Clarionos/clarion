@@ -8,6 +8,6 @@ export enum KeyType {
 export interface KeyPair {
     type: KeyType;
     publicKey: Uint8Array;
-    privateKey: Uint8Array;
+    privateKey?: Uint8Array;
     ecKeyPair: ec.KeyPair;
 }

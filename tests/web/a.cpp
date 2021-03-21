@@ -116,6 +116,43 @@ clintrinsics::Task<> testCrypto()
    {
       printf("recovered R1 key from signature R1!\n");
    }
+
+   auto remoteK1PubKey = co_await clintrinsics::createKey<clintrinsics::EccCurve::k1>();
+   auto sharedSecret1 =
+       co_await clintrinsics::diffieHellman<clintrinsics::EccCurve::k1>(k1PubKey, remoteK1PubKey);
+   printf("got diffie hellmann shared secret!\n");
+
+   std::string topSecretMessage = "Clarion is going to change the world!";
+   auto iv1 = clintrinsics::randomAesCbcIv();
+   auto encryptedBlob = co_await clintrinsics::aesCbcEncrypt(
+       sharedSecret1, iv1, topSecretMessage.c_str(), topSecretMessage.size());
+
+   // emulating a remote shared secret creation, it must be equal to the above generated secret
+   auto sharedSecret1FromRemote =
+       co_await clintrinsics::diffieHellman<clintrinsics::EccCurve::k1>(remoteK1PubKey, k1PubKey);
+   if (sharedSecret1FromRemote != sharedSecret1)
+   {
+      clintrinsics::fatal("shared secret mismatch when generated from remote\n");
+   }
+   else
+   {
+      printf("got diffie hellman shared secret on remote\n");
+   }
+
+   // emulating the remote decryption
+   auto encryptedBlobBytes = encryptedBlob.toUint8Vector();
+   auto decryptedBlob = co_await clintrinsics::aesCbcDecrypt(
+       sharedSecret1FromRemote, iv1, encryptedBlobBytes.data(), encryptedBlobBytes.size());
+   auto decryptedMessage = decryptedBlob.toString();
+   printf("decrypted message: %s\n", decryptedMessage.c_str());
+   if (decryptedMessage != topSecretMessage)
+   {
+      clintrinsics::fatal("decrypt message mismatch\n");
+   }
+   else
+   {
+      printf("decrypted top secret message successfully!\n");
+   }
 }
 
 // todo: move to a proper node file
