@@ -9,7 +9,7 @@ export const generateKey = async (
     type: KeyType = KeyType.k1,
     ecOptions?: ec.GenKeyPairOptions
 ): Promise<KeyPair> => {
-    const keyPair = constructKeyPair(type, ecOptions);
+    const keyPair = await constructKeyPair(type, ecOptions);
     console.info("!!!!!!!!!!!!! generated keypair", keyPair);
 
     // todo: save the keys to a proper storage... in fact we should not have to generate
@@ -27,10 +27,26 @@ export const getKeyPair = (publicKey: Uint8Array): KeyPair => {
     return keyPair;
 };
 
-const constructKeyPair = (
+export const publicKeyPairFromData = (type: KeyType, publicKey: Uint8Array) => {
+    const curve = new ec(type === KeyType.k1 ? "secp256k1" : "p256");
+    const ecKeyPair = curve.keyFromPublic(publicKey);
+    return { type, publicKey, ecKeyPair };
+};
+
+export const deriveEcdhSharedSecret = (
+    localKeyPair: KeyPair,
+    remoteKeyPair: KeyPair
+): Uint8Array => {
+    const sharedSecret = localKeyPair.ecKeyPair.derive(
+        remoteKeyPair.ecKeyPair.getPublic()
+    );
+    return new Uint8Array(sharedSecret.toArrayLike(Buffer, "be", 32));
+};
+
+const constructKeyPair = async (
     type: KeyType = KeyType.k1,
     ecOptions?: ec.GenKeyPairOptions
-): KeyPair => {
+): Promise<KeyPair> => {
     console.info("generating keytype ", KeyType[type]);
     const curve = new ec(type === KeyType.k1 ? "secp256k1" : "p256");
 

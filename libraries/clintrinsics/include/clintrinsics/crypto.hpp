@@ -29,6 +29,16 @@ namespace clintrinsics
       }
    };
 
+   struct AesCbcIv : public std::array<char, 16>
+   {
+      using std::array<char, 16>::array;
+   };
+
+   struct EcdhSharedSecret : public std::array<char, 32>
+   {
+      using std::array<char, 32>::array;
+   };
+
    enum EccCurve
    {
       k1 = 0,
@@ -50,23 +60,6 @@ namespace clintrinsics
    using PublicKeyType = variant<EccPublicKey<k1>, EccPublicKey<r1>>;
    using SignatureType = variant<EccSignature<k1>, EccSignature<r1>>;
 
-   struct ExternalCryptoBytes : public ExternalBytes
-   {
-      Sha256 toSha256() const { return toArrayObject<Sha256>(); }
-
-      template <EccCurve Curve>
-      EccPublicKey<Curve> toPublicKey() const
-      {
-         return toArrayObject<EccPublicKey<Curve>>();
-      }
-
-      template <EccCurve Curve>
-      EccSignature<Curve> toSignature() const
-      {
-         return toArrayObject<EccSignature<Curve>>();
-      }
-   };
-
    namespace imports
    {
       // todo: expose synchronous too
@@ -78,7 +71,7 @@ namespace clintrinsics
           uint32_t blobLen);
 
       [[clang::import_module("clarion"), clang::import_name("createKey")]] void
-      createKey(EccCurve curve, void* p, void (*f)(void* p, BytesTag* bytesTag));
+      createKey(EccCurve curve, void* p, void (*f)(void* p, BytesTag* publicKey));
 
       [[clang::import_module("clarion"), clang::import_name("sign")]] void sign(
           const void* publicKey,
@@ -86,7 +79,7 @@ namespace clintrinsics
           const void* hash,
           uint32_t hashLen,
           void* p,
-          void (*f)(void* p, BytesTag* bytesTag));
+          void (*f)(void* p, BytesTag* signature));
 
       [[clang::import_module("clarion"), clang::import_name("recover")]] void recover(
           EccCurve curve,
@@ -95,33 +88,64 @@ namespace clintrinsics
           const void* hash,
           uint32_t hashLen,
           void* p,
-          void (*f)(void* p, BytesTag* bytesTag));
+          void (*f)(void* p, BytesTag* publicKey));
+
+      [[clang::import_module("clarion"), clang::import_name("diffieHellman")]] void diffieHellman(
+          EccCurve curve,
+          const void* localPublicKey,
+          uint32_t localPublicKeyLen,
+          const void* remotePublicKey,
+          uint32_t remotePublicKeyLen,
+          void* p,
+          void (*f)(void* p, BytesTag* ecdhSharedSecret));
+
+      [[clang::import_module("clarion"), clang::import_name("randomAesCbIv")]] BytesTag*
+      randomAesCbcIv();
+
+      [[clang::import_module("clarion"), clang::import_name("aesCbcEncrypt")]] void aesCbcEncrypt(
+          const void* sharedSecret,
+          uint32_t sharedSecretLen,
+          const void* iv,
+          uint32_t ivLen,
+          const void* blob,
+          uint32_t blobLen,
+          void* p,
+          void (*f)(void* p, BytesTag* encryptedBlob));
+
+      [[clang::import_module("clarion"), clang::import_name("aesCbcDecrypt")]] void aesCbcDecrypt(
+          const void* sharedSecret,
+          uint32_t sharedSecretLen,
+          const void* iv,
+          uint32_t ivLen,
+          const void* encryptedBlob,
+          uint32_t encryptedBlobLen,
+          void* p,
+          void (*f)(void* p, BytesTag* decryptedBlob));
 
       // TODO:
       //  public_key recover(signature, hash, optional<public_key>); // todo: optional publickey?
-      //  (sync if possible) shared_secret diffyhelman(public_key local, public_key remote);
-      //  (sync if possible) blob aesEncrypt(shared_secret, blob);
    }  // namespace imports
 
    auto sha256(const void* blob, uint32_t blobLen)
    {
       return callExternalAsync<Sha256, imports::sha256>(
           std::tuple{blob, blobLen},
-          [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSha256(); });
+          [](BytesTag* sha256) { return ExternalBytes{sha256}.toArrayObject<Sha256>(); });
    }
 
    Sha256 sha256Sync(const void* blob, uint32_t blobLen)
    {
-      auto bytesTag = imports::sha256Sync(blob, blobLen);
-      return ExternalCryptoBytes{bytesTag}.toSha256();
+      auto sha256 = imports::sha256Sync(blob, blobLen);
+      return ExternalBytes{sha256}.toArrayObject<Sha256>();
    }
 
    template <EccCurve Curve>
    auto createKey()
    {
       return callExternalAsync<EccPublicKey<Curve>, imports::createKey>(
-          std::tuple{Curve},
-          [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toPublicKey<Curve>(); });
+          std::tuple{Curve}, [](BytesTag* publicKey) {
+             return ExternalBytes{publicKey}.toArrayObject<EccPublicKey<Curve>>();
+          });
    }
 
    template <EccCurve Curve>
@@ -129,7 +153,9 @@ namespace clintrinsics
    {
       return callExternalAsync<EccSignature<Curve>, imports::sign>(
           std::tuple{publicKey.begin(), publicKey.size(), hash.data(), hash.data_size()},
-          [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toSignature<Curve>(); });
+          [](BytesTag* signature) {
+             return ExternalBytes{signature}.toArrayObject<EccSignature<Curve>>();
+          });
    }
 
    template <EccCurve Curve>
@@ -137,7 +163,49 @@ namespace clintrinsics
    {
       return callExternalAsync<EccPublicKey<Curve>, imports::recover>(
           std::tuple{Curve, signature.begin(), signature.size(), hash.data(), hash.data_size()},
-          [](BytesTag* bytesTag) { return ExternalCryptoBytes{bytesTag}.toPublicKey<Curve>(); });
+          [](BytesTag* publicKey) {
+             return ExternalBytes{publicKey}.toArrayObject<EccPublicKey<Curve>>();
+          });
+   }
+
+   template <EccCurve Curve>
+   auto diffieHellman(const EccPublicKey<Curve>& localPublicKey,
+                      const EccPublicKey<Curve>& remotePublicKey)
+   {
+      return callExternalAsync<EcdhSharedSecret, imports::diffieHellman>(
+          std::tuple{Curve, localPublicKey.begin(), localPublicKey.size(), remotePublicKey.begin(),
+                     remotePublicKey.size()},
+          [](BytesTag* ecdhSharedSecret) {
+             return ExternalBytes{ecdhSharedSecret}.toArrayObject<EcdhSharedSecret>();
+          });
+   }
+
+   AesCbcIv randomAesCbcIv()
+   {
+      auto iv = imports::randomAesCbcIv();
+      return ExternalBytes{iv}.toArrayObject<AesCbcIv>();
+   }
+
+   auto aesCbcEncrypt(const EcdhSharedSecret& sharedSecret,
+                      const AesCbcIv& iv,
+                      const void* blob,
+                      uint32_t blobLen)
+   {
+      return callExternalAsync<ExternalBytes, imports::aesCbcEncrypt>(
+          std::tuple{sharedSecret.begin(), sharedSecret.size(), iv.begin(), iv.size(), blob,
+                     blobLen},
+          [](BytesTag* externalBytes) { return ExternalBytes{externalBytes}; });
+   }
+
+   auto aesCbcDecrypt(const EcdhSharedSecret& sharedSecret,
+                      const AesCbcIv& iv,
+                      const void* encryptedBlob,
+                      uint32_t encryptedBlobLen)
+   {
+      return callExternalAsync<ExternalBytes, imports::aesCbcDecrypt>(
+          std::tuple{sharedSecret.begin(), sharedSecret.size(), iv.begin(), iv.size(),
+                     encryptedBlob, encryptedBlobLen},
+          [](BytesTag* externalBytes) { return ExternalBytes{externalBytes}; });
    }
 
 }  // namespace clintrinsics
