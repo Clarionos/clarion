@@ -17,7 +17,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Runs the Super-Linter action
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -41,3 +40,11 @@ jobs:
           make -j$(nproc)
           ctest -j$(nproc)
           CLARION_WASM_PATH=a.wasm node dist/clariond
+          
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.2
+        with:
+        # Artifact name
+          name: Clarion
+        # A file, directory or wildcard pattern that describes what to upload
+          path: build
