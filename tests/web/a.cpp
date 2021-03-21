@@ -62,7 +62,7 @@ clintrinsics::Task<> testNet()
    printf(">> connection closed!\n");
 }
 
-clintrinsics::Task<> testCrypto()
+clintrinsics::Task<bool> testHashing()
 {
    printf("testing hashing...\n");
    std::string message = "hey ho lets go!";
@@ -83,66 +83,68 @@ clintrinsics::Task<> testCrypto()
       clintrinsics::fatal("sha256 incorrect hash\n");
    }
 
-   printf("creating new K1 public key...\n");
-   auto k1PubKey = co_await clintrinsics::createKey<clintrinsics::EccCurve::k1>();
-   printf("k1 pubKey third byte >> %c\n", k1PubKey[2]);
+   printf("test hashing done!\n");
+   co_return true;
+}
 
-   printf("creating new r1 public key...\n");
-   auto r1PubKey = co_await clintrinsics::createKey<clintrinsics::EccCurve::r1>();
-   printf("k1 pubKey third byte >> %c\n", r1PubKey[2]);
+template <clintrinsics::EccCurve Curve>
+clintrinsics::Task<bool> testKeys()
+{
+   printf("creating new public key...\n");
+   auto pubKey = co_await clintrinsics::createKey<Curve>();
+   printf("pubKey third byte >> %c\n", pubKey[2]);
 
-   auto signatureK1 = co_await clintrinsics::sign<clintrinsics::EccCurve::k1>(k1PubKey, sha256);
-   printf("signedk1 message third byte >> %c\n", signatureK1[2]);
+   std::string message = "a message to be signed";
+   auto hash = clintrinsics::sha256Sync(message.c_str(), message.size());
 
-   auto recoveredK1 = co_await clintrinsics::recover(signatureK1, sha256);
-   if (recoveredK1 != k1PubKey)
+   auto signature = co_await clintrinsics::sign<Curve>(pubKey, hash);
+   printf("signed message third byte >> %c\n", signature[2]);
+
+   auto recovered = co_await clintrinsics::recover(signature, hash);
+   if (recovered != pubKey)
    {
-      clintrinsics::fatal("fail to recover K1pubkey\n");
+      clintrinsics::fatal("fail to recover pubkey\n");
    }
    else
    {
-      printf("recovered K1 key from signature K1!\n");
+      printf("recovered key from signature!\n");
    }
 
-   auto signatureR1 = co_await clintrinsics::sign<clintrinsics::EccCurve::r1>(r1PubKey, sha256);
-   printf("signedr1 message third byte >> %c\n", signatureR1[2]);
+   printf("test keys done!\n");
+   co_return true;
+}
 
-   auto recoveredR1 = co_await clintrinsics::recover(signatureR1, sha256);
-   if (recoveredR1 != r1PubKey)
-   {
-      clintrinsics::fatal("fail to recover R1pubkey\n");
-   }
-   else
-   {
-      printf("recovered R1 key from signature R1!\n");
-   }
-
-   auto remoteK1PubKey = co_await clintrinsics::createKey<clintrinsics::EccCurve::k1>();
-   auto sharedSecret1 =
-       co_await clintrinsics::diffieHellman<clintrinsics::EccCurve::k1>(k1PubKey, remoteK1PubKey);
-   printf("got diffie hellmann shared secret!\n");
-
-   std::string topSecretMessage = "Clarion is going to change the world!";
-   auto iv1 = clintrinsics::randomAesCbcIv();
-   auto encryptedBlob = co_await clintrinsics::aesCbcEncrypt(
-       sharedSecret1, iv1, topSecretMessage.c_str(), topSecretMessage.size());
+template <clintrinsics::EccCurve Curve>
+clintrinsics::Task<bool> testEncryption()
+{
+   printf("testing diffiehellman exchange...\n");
+   auto pubKey = co_await clintrinsics::createKey<Curve>();
+   auto remotePubKey = co_await clintrinsics::createKey<Curve>();
+   auto sharedSecret = co_await clintrinsics::diffieHellman<Curve>(pubKey, remotePubKey);
 
    // emulating a remote shared secret creation, it must be equal to the above generated secret
-   auto sharedSecret1FromRemote =
-       co_await clintrinsics::diffieHellman<clintrinsics::EccCurve::k1>(remoteK1PubKey, k1PubKey);
-   if (sharedSecret1FromRemote != sharedSecret1)
+   auto remoteSharedSecret = co_await clintrinsics::diffieHellman<Curve>(remotePubKey, pubKey);
+   if (remoteSharedSecret != sharedSecret)
    {
-      clintrinsics::fatal("shared secret mismatch when generated from remote\n");
+      clintrinsics::fatal("shared secret mismatch\n");
    }
    else
    {
-      printf("got diffie hellman shared secret on remote\n");
+      printf("diffiehellman exchanged secrets successfully\n");
    }
 
-   // emulating the remote decryption
+   std::string topSecretMessage = "Clarion is going to change the world!";
+   printf("encrypting message: %s\n", topSecretMessage.c_str());
+   auto iv = clintrinsics::randomAesCbcIv();
+   auto encryptedBlob = co_await clintrinsics::aesCbcEncrypt(
+       sharedSecret, iv, topSecretMessage.c_str(), topSecretMessage.size());
    auto encryptedBlobBytes = encryptedBlob.toUint8Vector();
+   printf("encrypted message successfully, envelope size: %d\n", (int)encryptedBlobBytes.size());
+
+   // emulating the remote decryption
+   printf("emulating the remote decryption...\n");
    auto decryptedBlob = co_await clintrinsics::aesCbcDecrypt(
-       sharedSecret1FromRemote, iv1, encryptedBlobBytes.data(), encryptedBlobBytes.size());
+       remoteSharedSecret, iv, encryptedBlobBytes.data(), encryptedBlobBytes.size());
    auto decryptedMessage = decryptedBlob.toString();
    printf("decrypted message: %s\n", decryptedMessage.c_str());
    if (decryptedMessage != topSecretMessage)
@@ -153,6 +155,28 @@ clintrinsics::Task<> testCrypto()
    {
       printf("decrypted top secret message successfully!\n");
    }
+
+   printf("test encryption/decryption done!\n");
+   co_return true;
+}
+
+clintrinsics::Task<> testCrypto()
+{
+   printf(">>> test crypto...\n");
+
+   co_await testHashing();
+
+   printf("testing K1 keys");
+   co_await testKeys<clintrinsics::EccCurve::k1>();
+   printf("testing R1 keys");
+   co_await testKeys<clintrinsics::EccCurve::r1>();
+
+   printf("testing K1 encryption/decryption");
+   co_await testEncryption<clintrinsics::EccCurve::k1>();
+   printf("testing R1 encryption/decryption");
+   co_await testEncryption<clintrinsics::EccCurve::r1>();
+
+   printf("crypto testing done!\n");
 }
 
 // todo: move to a proper node file
