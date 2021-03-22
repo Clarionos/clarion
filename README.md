@@ -1,5 +1,7 @@
 # ClarionOS
 
+![Build](https://github.com/bytemaster/clarion/actions/workflows/build.yml/badge.svg?branch=main)
+
 ![Clarion Logo](./logo.jpg)
 
 -   Introduction: https://github.com/bytemaster/clarion/discussions/2
