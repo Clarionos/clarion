@@ -1,50 +1,33 @@
 name: build
 
-# Run this workflow every time a new commit pushed to your repository
 on: [push, pull_request]
 
 jobs:
-  # Set the job key. The key is displayed as the job name
-  # when a job name is not provided
-  build:
-    # Name the Job
-    name: Build clarion
-    # Set the type of machine to run on
-    runs-on: ubuntu-latest
+    build:
+        name: Build clarion
+        runs-on: ubuntu-latest
+        container: sparkplug0025/clarion:latest
 
-    steps:
-      # Checks out a copy of your repository on the ubuntu-latest machine
-      - name: Checkout code
-        uses: actions/checkout@v2
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -yq build-essential cmake git libboost-all-dev libssl-dev libgmp-dev 
-          export WASI_SDK_PREFIX=~/work/wasi-sdk-12.0
-          export PATH=~/work/node-v14.16.0-linux-x64/bin:$PATH
-          mkdir work
-          cd ~/work
-          wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-12/wasi-sdk-12.0-linux.tar.gz
-          tar xf wasi-sdk-12.0-linux.tar.gz
-          wget https://nodejs.org/dist/v14.16.0/node-v14.16.0-linux-x64.tar.xz
-          tar xf node-v14.16.0-linux-x64.tar.xz
-          npm i -g yarn
-          
-      - name: Build Clarion OS
-        run: |
-          git submodule update --init --recursive
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
-          make -j$(nproc)
-          ctest -j$(nproc)
-          CLARION_WASM_PATH=a.wasm node dist/clariond
-          
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.2
-        with:
-        # Artifact name
-          name: Clarion
-        # A file, directory or wildcard pattern that describes what to upload
-          path: build
+            - name: Build Clarion OS
+              run: |
+                  git submodule update --init --recursive
+                  mkdir build
+                  cd build
+                  cmake -DCMAKE_BUILD_TYPE=Release ..
+                  make -j$(nproc)
+                  ctest -j$(nproc)
+
+            - name: Tar Build
+              run: |
+                  rm -rf build/wasm/boost
+                  tar -cvf build.tar ./build
+
+            - name: Upload the Build Artifact
+              uses: actions/upload-artifact@v2.2.2
+              with:
+                  name: Clarion
+                  path: build.tar
