@@ -87,8 +87,11 @@ namespace clintrinsics
 
       std::string toString() const
       {
-         auto data = toUint8Vector();
-         return std::string(data.begin(), data.end());
+         auto size = imports::getObjSize(handle);
+         std::string str;
+         str.resize(size);
+         imports::getObjData(handle, str.data());
+         return str;
       }
 
       template <typename T>

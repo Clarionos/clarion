@@ -1,7 +1,9 @@
 # ClarionOS
 
+![Clarion Logo](./logo.jpg)
+
 -   Introduction: https://github.com/bytemaster/clarion/discussions/2
--   Discussions: https://github.com/bytemaster/clarion/discussions
+-   Discussions: https://eoscommunity.org/c/clarion
 -   Telegram: https://t.me/clarionos
 
 ## Build
