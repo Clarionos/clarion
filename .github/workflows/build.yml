@@ -24,9 +24,10 @@ jobs:
             - name: Cleanup before Artifact Upload
               run: |
                   rm -rf build/wasm/boost
+                  tar -cvf build.tar .
 
             - name: Upload the Build Artifact
               uses: actions/upload-artifact@v2.2.2
               with:
                   name: Clarion
-                  path: .
+                  path: build.tar
