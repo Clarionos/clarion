@@ -1,0 +1,33 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+    build:
+        name: Build clarion
+        runs-on: ubuntu-latest
+        container: sparkplug0025/clarion:latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Build Clarion OS
+              run: |
+                  git submodule update --init --recursive
+                  mkdir build
+                  cd build
+                  cmake -DCMAKE_BUILD_TYPE=Release ..
+                  make -j$(nproc)
+                  ctest -j$(nproc)
+
+            - name: Tar Build
+              run: |
+                  rm -rf build/wasm/boost
+                  tar -cvf build.tar ./build
+
+            - name: Upload the Build Artifact
+              uses: actions/upload-artifact@v2.2.2
+              with:
+                  name: Clarion
+                  path: build.tar
