@@ -20,14 +20,16 @@ jobs:
                   cmake -DCMAKE_BUILD_TYPE=Release ..
                   make -j$(nproc)
                   ctest -j$(nproc)
+                  NODE_PATH=dist CLARION_WASM_PATH=a.wasm timeout -k 6 6 node dist/clariond
 
-            - name: Cleanup before Artifact Upload
-              run: |
-                  rm -rf build/wasm/boost
-                  tar -cvf build.tar .
+            # TODO: define what needs to be packaged
+            # - name: Cleanup before Artifact Upload
+            #   run: |
+            #       rm -rf build/wasm/boost
+            #       tar -cvf build.tar .
 
-            - name: Upload the Build Artifact
-              uses: actions/upload-artifact@v2.2.2
-              with:
-                  name: Clarion
-                  path: build.tar
+            # - name: Upload the Build Artifact
+            #   uses: actions/upload-artifact@v2.2.2
+            #   with:
+            #       name: Clarion
+            #       path: build.tar
