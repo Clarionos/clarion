@@ -1,6 +1,12 @@
 name: build
 
-on: [push, pull_request]
+on:
+    push:
+        branches:
+            - main
+            - "test/*"
+    pull_request:
+        types: [assigned, opened, synchronize, reopened, labeled]
 
 jobs:
     build:
@@ -19,8 +25,12 @@ jobs:
                   cd build
                   cmake -DCMAKE_BUILD_TYPE=Release ..
                   make -j$(nproc)
-                  ctest -j$(nproc)
-                  NODE_PATH=dist CLARION_WASM_PATH=a.wasm timeout -k 6 6 node dist/clariond
+
+            - name: Run tests with CTest
+              run: cd build && ctest -j$(nproc)
+
+            - name: Initialize and Observe ClarionD
+              run: cd build && NODE_PATH=dist CLARION_WASM_PATH=a.wasm timeout --preserve-status 12 node --unhandled-rejections=warn-with-error-code dist/clariond
 
             # TODO: define what needs to be packaged
             # - name: Cleanup before Artifact Upload
