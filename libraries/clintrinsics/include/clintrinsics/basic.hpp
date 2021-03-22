@@ -18,6 +18,7 @@ namespace clintrinsics
    [[noreturn]] inline void fatal(const char* msg)
    {
       console(msg, strlen(msg));
+      console("\n", 1);
       exit(1);
    }
 
@@ -102,7 +103,7 @@ namespace clintrinsics
          T array;
          if (size != sizeof(array))
          {
-            fatal("to array memory size mismatch\n");
+            fatal("to array memory size mismatch");
          }
 
          imports::getObjData(handle, array.data());

@@ -10,6 +10,7 @@
 namespace clintrinsics
 {
    namespace coro = std::experimental::coroutines_v1;
+   [[noreturn]] void fatal(const char* msg);
 
    template <typename Ret = void>
    struct Task;
@@ -127,7 +128,7 @@ namespace clintrinsics
       void await_resume() {}
    };
 
-   // An awaitable that already as a (single-use) value
+   // An awaitable that already has a (single-use) value
    template <typename T>
    struct NoWait
    {
@@ -155,15 +156,52 @@ namespace clintrinsics
       coro::coroutine_handle<void> co;
       Ret result;
 
+      CallAsyncAwaitable(Args args, Lambda lambda)
+          : args{std::move(args)}, lambda(std::move(lambda))
+      {
+      }
+
+      CallAsyncAwaitable(const CallAsyncAwaitable&) = delete;
+      CallAsyncAwaitable(CallAsyncAwaitable&& src) { *this = std::move(src); }
+
+      ~CallAsyncAwaitable()
+      {
+         // todo: switch to assert once debug build is working
+         if (co)
+            fatal("destroy in-use CallAsyncAwaitable");
+      }
+
+      CallAsyncAwaitable& operator=(const CallAsyncAwaitable&) = delete;
+
+      CallAsyncAwaitable& operator=(CallAsyncAwaitable&& src)
+      {
+         // todo: switch to assert once debug build is working
+         if (co)
+            fatal("move to in-use CallAsyncAwaitable");
+         if (src.co)
+            fatal("move from in-use CallAsyncAwaitable");
+         args = std::move(src.args);
+         lambda = std::move(src.lambda);
+         return *this;
+      }
+
       bool await_ready() { return false; }
 
       void await_suspend(coro::coroutine_handle<void> co)
       {
+         // todo: switch to assert once debug build is working
+         if (this->co)
+            fatal("await on an in-use CallAsyncAwaitable");
          this->co = co;
          auto post_process = [](void* p, auto... result) {
             auto self = (CallAsyncAwaitable*)p;
+            // todo: switch to assert once debug build is working
+            if (!self->co)
+               fatal("resume a CallAsyncAwaitable which isn't being awaited on");
             self->result = std::invoke(self->lambda, result...);
-            self->co.resume();
+            auto co = self->co;
+            self->co = {};
+            co.resume();
          };
          std::apply(extFn, std::tuple_cat(args, std::tuple{this, post_process}));
       }
@@ -178,24 +216,66 @@ namespace clintrinsics
       Lambda lambda;
       coro::coroutine_handle<void> co;
 
+      CallAsyncAwaitable(Args args, Lambda lambda)
+          : args{std::move(args)}, lambda(std::move(lambda))
+      {
+      }
+
+      CallAsyncAwaitable(const CallAsyncAwaitable&) = delete;
+      CallAsyncAwaitable(CallAsyncAwaitable&& src) { *this = std::move(src); }
+
+      ~CallAsyncAwaitable()
+      {
+         // todo: switch to assert once debug build is working
+         if (co)
+            fatal("destroy in-use CallAsyncAwaitable");
+      }
+
+      CallAsyncAwaitable& operator=(const CallAsyncAwaitable&) = delete;
+
+      CallAsyncAwaitable& operator=(CallAsyncAwaitable&& src)
+      {
+         // todo: switch to assert once debug build is working
+         if (co)
+            fatal("move to in-use CallAsyncAwaitable");
+         if (src.co)
+            fatal("move from in-use CallAsyncAwaitable");
+         args = std::move(src.args);
+         lambda = std::move(src.lambda);
+         return *this;
+      }
+
       bool await_ready() { return false; }
 
       void await_suspend(coro::coroutine_handle<void> co)
       {
+         // todo: switch to assert once debug build is working
+         if (this->co)
+            fatal("await on an in-use CallAsyncAwaitable");
          this->co = co;
          auto post_process = [](void* p, auto... result) {
             auto self = (CallAsyncAwaitable*)p;
+            // todo: switch to assert once debug build is working
+            if (!self->co)
+               fatal("resume a CallAsyncAwaitable which isn't being awaited on");
             std::invoke(self->lambda, result...);
-            self->co.resume();
+            auto co = self->co;
+            self->co = {};
+            co.resume();
          };
          std::apply(extFn, std::tuple_cat(args, std::tuple{this, post_process}));
       }
 
       void await_resume() {}
 
-      Task<> await_task() { co_await* this; }
-
-      void run() { await_task().start(); }
+      void run() &&
+      {
+         auto f = [this]() -> Task<> {
+            auto a = std::move(*this);
+            co_await a;
+         };
+         f().start();
+      }
    };
 
    // Return an awaitable which invokes an external async function, then feeds
