@@ -74,6 +74,7 @@ if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
     add_custom_target(package-wasm
         DEPENDS wasm
         COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/clarion.wasm
+        COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/app/public/assets/clarion.wasm
     )
 
     add_custom_target(dev
