@@ -15,12 +15,12 @@ export const sign = async (
         : constructSignature(keyPair, digest, { canonical: true });
 };
 
-export const recover = async (
+export const recover = (
     keyType: KeyType,
     signature: Uint8Array,
     digest: Uint8Array,
     encoding: BufferEncoding = "utf8"
-): Promise<Uint8Array> => {
+): Uint8Array => {
     console.info("recovering", signature, digest);
 
     const curve = new ec(keyType === KeyType.k1 ? "secp256k1" : "p256");
@@ -59,8 +59,11 @@ const constructSignature = (
     const r = ellipticSignature.r.toArray("be", 32);
     const s = ellipticSignature.s.toArray("be", 32);
 
-    let recoveryParam;
-    recoveryParam = ellipticSignature.recoveryParam + 27;
+    if (ellipticSignature.recoveryParam === null) {
+        throw new Error("missing recovery param on elliptic signature");
+    }
+
+    let recoveryParam = ellipticSignature.recoveryParam + 27;
     if (ellipticSignature.recoveryParam <= 3) {
         recoveryParam += 4;
     }

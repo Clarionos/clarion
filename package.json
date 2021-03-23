@@ -14,13 +14,13 @@
         "start": "lerna run start"
     },
     "devDependencies": {
-        "lerna": "^4.0.0",
-        "@typescript-eslint/eslint-plugin": "^4.16.1",
-        "@typescript-eslint/parser": "^4.16.1",
-        "eslint": "^7.21.0",
+        "@typescript-eslint/eslint-plugin": "^4.5.0",
+        "@typescript-eslint/parser": "^4.5.0",
+        "eslint": "^7.11.0",
         "eslint-config-prettier": "^8.1.0",
         "eslint-plugin-import": "^2.22.1",
         "eslint-plugin-prettier": "^3.3.1",
+        "lerna": "^4.0.0",
         "prettier": "^2.2.1",
         "typescript": "^4.2.3"
     }

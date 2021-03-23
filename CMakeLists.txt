@@ -66,11 +66,15 @@ if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
 
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/pwa
         COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/pwa/dist/* ${CMAKE_BINARY_DIR}/dist/pwa
+
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/dist/app
+        COMMAND cp -a ${CMAKE_CURRENT_SOURCE_DIR}/packages/app/dist/* ${CMAKE_BINARY_DIR}/dist/app
     )
 
     add_custom_target(package-wasm
         DEPENDS wasm
         COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/d/dist/clarion.wasm
+        COMMAND cp a.wasm ${CMAKE_CURRENT_SOURCE_DIR}/packages/app/public/assets/clarion.wasm
     )
 
     add_custom_target(dev

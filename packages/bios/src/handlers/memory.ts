@@ -11,6 +11,9 @@ export class MemoryHandler {
     };
 
     getMemory = () => {
+        if (!this.instance) {
+            throw new Error("wasm instance is not set");
+        }
         return this.instance.exports.memory as WebAssembly.Memory;
     };
 
@@ -42,6 +45,9 @@ export class MemoryHandler {
     };
 
     wasmCallback = (fnIndex: number, ...params: any): void => {
+        if (!this.instance) {
+            throw new Error("wasm instance is not set");
+        }
         const fnTable = this.instance.exports
             .__indirect_function_table as WebAssembly.Table;
         const fn = fnTable.get(fnIndex);

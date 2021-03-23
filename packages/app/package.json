@@ -1,0 +1,47 @@
+{
+    "name": "@clarionos/app",
+    "description": "ClarionOS PWA React App",
+    "private": true,
+    "version": "1.0.0",
+    "dependencies": {
+        "@clarionos/bios": "*",
+        "react": "~16.13.1",
+        "react-dom": "~16.13.1"
+    },
+    "devDependencies": {
+        "@craco/craco": "^6.1.1",
+        "@tailwindcss/postcss7-compat": "^2.0.4",
+        "@types/node": "~14.0.23",
+        "@types/react": "~17.0.0",
+        "@types/react-dom": "~17.0.0",
+        "autoprefixer": "^9",
+        "copy-webpack-plugin": "^6.3.2",
+        "cross-env": "~7.0.2",
+        "postcss": "^7",
+        "react-app-rewired": "~2.1.6",
+        "react-scripts": "^4.0.3",
+        "rimraf": "^3.0.2",
+        "tailwindcss": "npm:@tailwindcss/postcss7-compat",
+        "tsconfig-paths-webpack-plugin": "~3.2.0",
+        "wasm-loader": "^1.3.0"
+    },
+    "scripts": {
+        "dev": "cross-env SKIP_PREFLIGHT_CHECK=true craco start",
+        "build": "yarn run clean && yarn run compile",
+        "compile": "cross-env SKIP_PREFLIGHT_CHECK=true craco build && mv build dist",
+        "clean": "rimraf -rf ./dist",
+        "test": "yarn run build"
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    }
+}
