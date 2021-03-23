@@ -40,7 +40,7 @@ export const deriveEcdhSharedSecret = (
     const sharedSecret = localKeyPair.ecKeyPair.derive(
         remoteKeyPair.ecKeyPair.getPublic()
     );
-    return new Uint8Array(sharedSecret.toBuffer());
+    return new Uint8Array(sharedSecret.toArrayLike(Buffer, "be", 32));
 };
 
 const constructKeyPair = async (
