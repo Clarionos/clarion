@@ -10,12 +10,10 @@ export const App = () => {
     const loadClarionWasm = async () => {
         const clarionContext = await getContext();
         if (!clarionContext.instance) {
-            throw new Error("misisng clarion instance");
+            throw new Error("missing clarion instance!!");
         }
         (clarionContext.instance.exports.test as Function)();
     };
 
-    return <div>Hello Clarion React</div>;
+    return <div>Hello Clarion React with Tailwind!</div>;
 };
-
-export default App;
