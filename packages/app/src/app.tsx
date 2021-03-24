@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 
 import { getContext } from "./clarion";
 
-import { AuthPage } from "auth";
+import { AuthPage } from "./auth";
 
 export const App = () => {
     useEffect(() => {

@@ -9,10 +9,11 @@ interface Props {
     href?: string;
     outline?: boolean;
     isSubmit?: boolean;
+    className?: string;
 }
 
 const BASE_CLASS =
-    "inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none";
+    "items-center px-6 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none";
 
 export const Button = ({
     children,
@@ -22,14 +23,16 @@ export const Button = ({
     href,
     outline,
     isSubmit,
+    className,
 }: Props) => {
     const buttonColor = color || "indigo";
     const buttonColorSet = outline
-        ? ` border-${buttonColor}-300 text-${buttonColor}-700 bg-white hover:bg-${buttonColor}-50`
-        : ` border-transparent text-white bg-${buttonColor}-600 hover:bg-${buttonColor}-700`;
-    const buttonClass = BASE_CLASS + buttonColorSet;
+        ? ` border-${buttonColor}-300 text-${buttonColor}-600 bg-white hover:bg-${buttonColor}-50`
+        : ` border-transparent text-white bg-${buttonColor}-500 hover:bg-${buttonColor}-600`;
+    const buttonClass = BASE_CLASS + buttonColorSet + ` ${className || ""}`;
 
     const iconOutlineColor = outline ? `text-${color}-500` : "";
+
     const formattedIcon =
         icon &&
         React.createElement(icon, {

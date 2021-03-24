@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { FormEvent, FormEventHandler, useState } from "react";
 
 export type SetValuesEvent = (event?: {
     target: { id: string; value: any };
