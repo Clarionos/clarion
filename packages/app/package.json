@@ -6,7 +6,8 @@
     "dependencies": {
         "@clarionos/bios": "*",
         "react": "~16.13.1",
-        "react-dom": "~16.13.1"
+        "react-dom": "~16.13.1",
+        "react-icons": "^4.2.0"
     },
     "devDependencies": {
         "@craco/craco": "^6.1.1",

@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 
 import { getContext } from "./clarion";
 
+import { AuthPage } from "./auth";
+
 export const App = () => {
     useEffect(() => {
         loadClarionWasm();
@@ -15,5 +17,5 @@ export const App = () => {
         (clarionContext.instance.exports.test as Function)();
     };
 
-    return <div>Hello Clarion React with Tailwind!</div>;
+    return <AuthPage />;
 };
