@@ -25,7 +25,7 @@ export const Button = ({
     isSubmit,
     className,
 }: Props) => {
-    const buttonColor = color || "indigo";
+    const buttonColor = color || "yellow";
     const buttonColorSet = outline
         ? ` border-${buttonColor}-300 text-${buttonColor}-600 bg-white hover:bg-${buttonColor}-50`
         : ` border-transparent text-white bg-${buttonColor}-500 hover:bg-${buttonColor}-600`;

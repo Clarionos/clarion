@@ -7,7 +7,7 @@ export const AuthPage = () => {
     return (
         <>
             <div className="min-h-screen px-5 py-24 mx-auto flex bg-gray-50 justify-center md:justify-around">
-                <div className="max-w-md bg-white rounded-lg p-8 flex flex-col w-full mt-10 md:mt-0 relative z-10 shadow-md">
+                <div className="max-w-md bg-white rounded-lg p-8 flex flex-col w-full mt-10 md:mt-0 shadow-md">
                     <Heading size={4} className="mb-4">
                         Welcome to ClarionOS
                     </Heading>

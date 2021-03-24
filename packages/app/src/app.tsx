@@ -3,7 +3,8 @@ import React, { useEffect } from "react";
 import { getContext } from "./clarion";
 
 // import { AuthPage } from "./auth";
-import { ProfilePage } from "./users";
+// import { ProfilePage } from "./users";
+import { MemberPage } from "./members";
 
 export const App = () => {
     useEffect(() => {
@@ -23,5 +24,6 @@ export const App = () => {
 
     // TODO: implement router
     // return <AuthPage />;
-    return <ProfilePage />;
+    // return <ProfilePage />;
+    return <MemberPage />;
 };
