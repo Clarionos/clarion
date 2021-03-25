@@ -4,7 +4,13 @@
     "private": true,
     "version": "1.0.0",
     "dependencies": {
-        "@clarionos/bios": "*",
+        "@clarionos/bios": "^0.1.0",
+        "ipfs-core": "^0.5.4",
+        "ipfs-unixfs-engine": "^0.35.4",
+        "ipfs-unixfs-importer": "^7.0.1",
+        "ipld": "^0.29.0",
+        "ipld-in-memory": "^8.0.0",
+        "pull-stream": "^3.6.14",
         "react": "~16.13.1",
         "react-dom": "~16.13.1",
         "react-icons": "^4.2.0"
@@ -13,6 +19,7 @@
         "@craco/craco": "^6.1.1",
         "@tailwindcss/postcss7-compat": "^2.0.4",
         "@types/node": "~14.0.23",
+        "@types/pull-stream": "^3.6.2",
         "@types/react": "~17.0.0",
         "@types/react-dom": "~17.0.0",
         "autoprefixer": "^9",

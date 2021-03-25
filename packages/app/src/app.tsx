@@ -2,7 +2,8 @@ import React, { useEffect } from "react";
 
 import { getContext } from "./clarion";
 
-import { AuthPage } from "./auth";
+// import { AuthPage } from "./auth";
+import { ProfilePage } from "./users";
 
 export const App = () => {
     useEffect(() => {
@@ -12,10 +13,13 @@ export const App = () => {
     const loadClarionWasm = async () => {
         const clarionContext = await getContext();
         if (!clarionContext.instance) {
-            throw new Error("missing clarion instance!!");
+            console.info("wasm not loaded");
+            return;
+            // throw new Error("missing clarion instance!!");
         }
         (clarionContext.instance.exports.test as Function)();
     };
 
-    return <AuthPage />;
+    // return <AuthPage />;
+    return <ProfilePage />;
 };

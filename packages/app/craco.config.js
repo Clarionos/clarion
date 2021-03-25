@@ -1,6 +1,6 @@
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
-const path = require("path");
 const { ESLINT_MODES } = require("@craco/craco");
+const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
