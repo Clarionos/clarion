@@ -10,6 +10,7 @@ export const App = () => {
         loadClarionWasm();
     });
 
+    // todo: implement clarion as a context/hook
     const loadClarionWasm = async () => {
         const clarionContext = await getContext();
         if (!clarionContext.instance) {
@@ -20,6 +21,7 @@ export const App = () => {
         (clarionContext.instance.exports.test as Function)();
     };
 
+    // TODO: implement router
     // return <AuthPage />;
     return <ProfilePage />;
 };
