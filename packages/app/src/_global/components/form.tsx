@@ -19,10 +19,11 @@ export const Input: React.FC<HTMLProps<HTMLInputElement>> = (props) => {
     );
 };
 
-export const FileInput: React.FC<{
-    id: string;
-    label?: string;
-}> = (props) => {
+export const FileInput: React.FC<
+    HTMLProps<HTMLInputElement> & {
+        label?: string;
+    }
+> = (props) => {
     return (
         <label
             htmlFor={props.id}

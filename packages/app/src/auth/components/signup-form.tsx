@@ -20,6 +20,8 @@ export const SignupForm: React.FC<{
     onSubmit: (data: SignupFormData) => void;
 }> = ({ onSubmit }) => {
     const [fields, setFields] = useFormFields(initialForm);
+    const onChangeFields = (e: React.ChangeEvent<HTMLInputElement>) =>
+        setFields(e);
 
     return (
         <form
@@ -40,9 +42,7 @@ export const SignupForm: React.FC<{
                         type="text"
                         required
                         value={fields.firstName}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setFields(e)
-                        }
+                        onChange={onChangeFields}
                     />
                 </Form.LabeledSet>
                 <Form.LabeledSet label="Last Name" htmlFor="lastName">
@@ -51,9 +51,7 @@ export const SignupForm: React.FC<{
                         type="text"
                         required
                         value={fields.lastName}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setFields(e)
-                        }
+                        onChange={onChangeFields}
                     />
                 </Form.LabeledSet>
                 <div className="flex flex-col space-y-2">
