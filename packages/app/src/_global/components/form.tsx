@@ -1,4 +1,4 @@
-import React, { HTMLProps, InputHTMLAttributes } from "react";
+import React, { HTMLProps } from "react";
 
 export const Label: React.FC<{
     htmlFor: string;
