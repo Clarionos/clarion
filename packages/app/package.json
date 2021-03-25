@@ -5,7 +5,6 @@
     "version": "1.0.0",
     "dependencies": {
         "@clarionos/bios": "^0.1.0",
-        "ipfs": "^0.54.4",
         "ipfs-unixfs-importer": "^7.0.1",
         "ipld": "^0.29.0",
         "ipld-in-memory": "^8.0.0",
