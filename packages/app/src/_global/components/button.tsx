@@ -7,6 +7,7 @@ interface Props {
     icon?: IconType;
     onClick?: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
     href?: string;
+    target?: string;
     outline?: boolean;
     isSubmit?: boolean;
     className?: string;
@@ -21,6 +22,7 @@ export const Button = ({
     icon,
     onClick,
     href,
+    target,
     outline,
     isSubmit,
     className,
@@ -47,7 +49,7 @@ export const Button = ({
     );
 
     return href ? (
-        <a href={href} className={buttonClass}>
+        <a href={href} className={buttonClass} target={target}>
             {content}
         </a>
     ) : (

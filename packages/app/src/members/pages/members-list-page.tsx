@@ -94,14 +94,18 @@ export const MembersListPage = () => {
                             </nav>
                             <Text className="mt-4">{member.bio}</Text>
 
-                            <div className="mx-auto">
-                                <Button
-                                    className="mt-10 inline-flex"
-                                    icon={FaVideo}
-                                >
-                                    Induction Ceremony
-                                </Button>
-                            </div>
+                            {member.inductionVideo && (
+                                <div className="mx-auto">
+                                    <Button
+                                        href={`https://ipfs.video/#/ipfs/${member.inductionVideo}`}
+                                        target="_blank"
+                                        className="mt-10 inline-flex"
+                                        icon={FaVideo}
+                                    >
+                                        Induction Ceremony
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
