@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 
 import { AuthPage } from "./auth";
 import { ProfilePage } from "./users";
-import { MemberPage } from "./members";
+import { MemberPage, MembersListPage } from "./members";
 
 export const App = () => (
     <Router>
@@ -11,8 +11,11 @@ export const App = () => (
             <Route path="/profile">
                 <ProfilePage />
             </Route>
-            <Route path="/members">
+            <Route path="/members/dan">
                 <MemberPage />
+            </Route>
+            <Route path="/members">
+                <MembersListPage />
             </Route>
             <Route path="/">
                 <AuthPage />
