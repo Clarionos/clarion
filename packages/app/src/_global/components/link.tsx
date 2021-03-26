@@ -7,7 +7,7 @@ interface Props {
 }
 
 export const Link = ({ children, className, href }: Props) => {
-    const textClass = `text-yellow-500 hover:underline ${className || ""}`;
+    const textClass = `${className || ""} text-yellow-500 hover:underline`;
 
     return (
         <a className={textClass} href={href}>

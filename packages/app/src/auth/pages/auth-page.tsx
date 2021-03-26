@@ -1,13 +1,27 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import { SignupForm } from "../components";
-import { Heading, Link, Text } from "../../_global";
+import { Heading, Link, Text, useClarion } from "../../_global";
 
 export const AuthPage = () => {
+    const { context } = useClarion();
+
+    useEffect(() => {
+        if (!context) {
+            return;
+        }
+
+        if (!context.instance) {
+            console.info("wasm not loaded");
+            return;
+        }
+        (context.instance.exports.test as Function)();
+    }, [context]);
+
     return (
         <>
             <div className="min-h-screen px-5 py-24 mx-auto flex bg-gray-50 justify-center md:justify-around">
-                <div className="max-w-md bg-white rounded-lg p-8 flex flex-col w-full mt-10 md:mt-0 relative z-10 shadow-md">
+                <div className="max-w-md bg-white rounded-lg p-8 flex flex-col w-full mt-10 md:mt-0 shadow-md">
                     <Heading size={4} className="mb-4">
                         Welcome to ClarionOS
                     </Heading>
