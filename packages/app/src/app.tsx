@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 
 import { getContext } from "./clarion";
-
-// import { AuthPage } from "./auth";
-// import { ProfilePage } from "./users";
+import { AuthPage } from "./auth";
+import { ProfilePage } from "./users";
 import { MemberPage } from "./members";
 
 export const App = () => {
@@ -22,8 +22,19 @@ export const App = () => {
         (clarionContext.instance.exports.test as Function)();
     };
 
-    // TODO: implement router
-    // return <AuthPage />;
-    // return <ProfilePage />;
-    return <MemberPage />;
+    return (
+        <Router>
+            <Switch>
+                <Route path="/profile">
+                    <ProfilePage />
+                </Route>
+                <Route path="/members">
+                    <MemberPage />
+                </Route>
+                <Route path="/">
+                    <AuthPage />
+                </Route>
+            </Switch>
+        </Router>
+    );
 };

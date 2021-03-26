@@ -10,7 +10,8 @@
         "ipld-in-memory": "^8.0.0",
         "react": "~16.13.1",
         "react-dom": "~16.13.1",
-        "react-icons": "^4.2.0"
+        "react-icons": "^4.2.0",
+        "react-router-dom": "^5.2.0"
     },
     "devDependencies": {
         "@craco/craco": "^6.1.1",
@@ -19,6 +20,7 @@
         "@types/pull-stream": "^3.6.2",
         "@types/react": "~17.0.0",
         "@types/react-dom": "~17.0.0",
+        "@types/react-router-dom": "^5.1.7",
         "autoprefixer": "^9",
         "copy-webpack-plugin": "^6.3.2",
         "cross-env": "~7.0.2",
