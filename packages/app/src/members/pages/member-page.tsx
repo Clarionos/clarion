@@ -7,7 +7,7 @@ import {
     FaVideo,
 } from "react-icons/fa";
 
-import { Button, Heading, Link, SmallText, Text } from "../../_global";
+import { Button, Heading, SmallText, Text } from "../../_global";
 
 export const MemberPage = () => {
     return (

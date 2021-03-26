@@ -1,7 +1,6 @@
 import React from "react";
 
-import { Form, Heading, Text } from "../../_global";
-import { storeFile } from "../../_global";
+import { Form, Heading, Text, storeFile } from "../../_global";
 
 export const ProfilePage = () => {
     const handleProfileImageUpload = async (
