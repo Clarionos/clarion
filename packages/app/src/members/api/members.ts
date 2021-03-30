@@ -127,9 +127,9 @@ const fillSocialHandlesFromAtomicAssetValue = (
     social: MemberSocialHandles,
     value: string
 ) => {
-    const [type, handle] = value.split(HANDLE_SEPARATOR);
+    const [type, ...handle] = value.split(HANDLE_SEPARATOR);
     const socialHandleKey = ATOMIC_ASSETS_SOCIAL_MAP[type];
     if (socialHandleKey) {
-        social[socialHandleKey] = handle;
+        social[socialHandleKey] = handle.join(HANDLE_SEPARATOR);
     }
 };

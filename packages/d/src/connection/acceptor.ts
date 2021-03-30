@@ -1,4 +1,4 @@
-import WebSocket, { AddressInfo } from "ws";
+import WebSocket from "ws";
 import { IncomingMessage } from "node:http";
 import { ClarionConnection, ClarionConnectionAcceptor } from "@clarionos/bios";
 

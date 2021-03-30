@@ -2,6 +2,7 @@ import React from "react";
 import {
     FaAirbnb,
     FaBitcoin,
+    FaBlogger,
     FaTelegram,
     FaTwitter,
     FaVideo,
@@ -83,6 +84,14 @@ const MemberSocialLinks = ({ member }: { member: MemberData }) => (
                 icon={FaAirbnb}
                 color="red"
                 href={`https://eoscommunity.org/u/${member.socialHandles.eosCommunity}`}
+            />
+        )}
+        {member.socialHandles.blogUrl && (
+            <SocialButton
+                handle="Blog"
+                icon={FaBlogger}
+                color="yellow"
+                href={member.socialHandles.blogUrl}
             />
         )}
     </nav>
