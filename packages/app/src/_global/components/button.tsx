@@ -7,8 +7,10 @@ interface Props {
     icon?: IconType;
     onClick?: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
     href?: string;
+    target?: string;
     outline?: boolean;
     isSubmit?: boolean;
+    disabled?: boolean;
     className?: string;
 }
 
@@ -21,8 +23,10 @@ export const Button = ({
     icon,
     onClick,
     href,
+    target,
     outline,
     isSubmit,
+    disabled,
     className,
 }: Props) => {
     const buttonColor = color || "yellow";
@@ -47,7 +51,7 @@ export const Button = ({
     );
 
     return href ? (
-        <a href={href} className={buttonClass}>
+        <a href={href} className={buttonClass} target={target}>
             {content}
         </a>
     ) : (
@@ -55,6 +59,7 @@ export const Button = ({
             onClick={onClick}
             type={isSubmit ? "submit" : "button"}
             className={buttonClass}
+            disabled={disabled}
         >
             {content}
         </button>
