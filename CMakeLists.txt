@@ -45,6 +45,21 @@ else()
     message(WARNING "WASI_SDK_PREFIX isn't defined; skipping wasm")
 endif()
 
+if(DEFINED EOSIO_CONTRACTS OR EOSIO_CONTRACTS)
+    ExternalProject_Add(contracts
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contracts
+        BINARY_DIR ${CMAKE_BINARY_DIR}/contracts
+        #CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${EOSIO_CDT_ROOT}/lib/cmake/eosio.cdt/EosioWasmToolchain.cmake
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        TEST_COMMAND ""
+        INSTALL_COMMAND ""
+        BUILD_ALWAYS 1
+    )
+else()
+    message(WARNING "EOSIO_CONTRACTS isn't defined; skipping eosio build")
+endif()
+
 ########## TS PACKAGES ####################
 if(NOT DEFINED SKIP_TS OR NOT SKIP_TS)
     add_custom_target(yarn ALL
