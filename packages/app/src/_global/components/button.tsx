@@ -10,6 +10,7 @@ interface Props {
     target?: string;
     outline?: boolean;
     isSubmit?: boolean;
+    disabled?: boolean;
     className?: string;
 }
 
@@ -25,6 +26,7 @@ export const Button = ({
     target,
     outline,
     isSubmit,
+    disabled,
     className,
 }: Props) => {
     const buttonColor = color || "yellow";
@@ -57,6 +59,7 @@ export const Button = ({
             onClick={onClick}
             type={isSubmit ? "submit" : "button"}
             className={buttonClass}
+            disabled={disabled}
         >
             {content}
         </button>

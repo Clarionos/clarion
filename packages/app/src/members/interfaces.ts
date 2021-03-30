@@ -1,4 +1,5 @@
 export interface MemberData {
+    templateId: number;
     name: string;
     image: string;
     edenAccount: string;

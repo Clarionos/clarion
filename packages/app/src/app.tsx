@@ -11,7 +11,7 @@ export const App = () => (
             <Route path="/profile">
                 <ProfilePage />
             </Route>
-            <Route path="/members/dan">
+            <Route path="/members/:edenAccount">
                 <MemberPage />
             </Route>
             <Route path="/members">
