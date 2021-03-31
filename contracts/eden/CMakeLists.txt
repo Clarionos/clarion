@@ -1,6 +1,7 @@
 add_contract(eden eden
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/eden.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/transfer_handler.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/actions/hi.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/actions/transfer_handler.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/members.cpp
 )
 
 target_include_directories(eden
