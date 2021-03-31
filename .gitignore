@@ -4,7 +4,7 @@ CMakeCache.txt
 *.a
 *.o
 build
-build-docker
+build-*
 tests/clio/clio_tests
 libraries/appbase/version.cpp
 compile_commands.json

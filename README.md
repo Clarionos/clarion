@@ -32,6 +32,7 @@ make dev
 ```sh
 sudo apt-get update
 sudo apt-get install -yq     \
+    binaryen                 \
     build-essential          \
     cmake                    \
     git                      \
