@@ -9,7 +9,8 @@ namespace eden
 {
    inline const eosio::asset minimum_membership_donation{10, default_token};
 
-   enum member_status : uint8_t
+   using member_status_type = uint8_t;
+   enum member_status : member_status_type
    {
       pending = 0,
       active = 1,
@@ -20,7 +21,7 @@ namespace eden
    {
       eosio::name member;
       eosio::asset balance;
-      member_status status;
+      member_status_type status;
 
       uint64_t primary_key() const { return member.value; }
    };

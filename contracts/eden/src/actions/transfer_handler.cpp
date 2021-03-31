@@ -8,7 +8,7 @@ namespace eden
                                const eosio::asset& quantity,
                                std::string memo)
    {
-      print_f("transfer from Name: %\n", from);
+      print_f("transfer from name: %\n", from);
 
       eosio::check(to == get_self(), "only accepting transfers to us");
       eosio::check(quantity.symbol == default_token, "token must be a valid EOS");
