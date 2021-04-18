@@ -1,7 +1,7 @@
 # Arch has poackages that are actually up to date and configurations are simpler because of it.
 # this "lopsided" image is amd64 + arm64 which is perfect until we must support riscv64
 
-FROM lopsided/archlinux
+FROM faddat/archlinux
 
 COPY . /clarion
 
