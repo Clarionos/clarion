@@ -20,5 +20,5 @@ jobs:
       uses: docker/setup-buildx-action@v1
 
     - name: Build
-      run: docker buildx build --dockerfile .devices/Dockerfile .
+      run: docker buildx build --dockerfile .devices/Dockerfile --platform linux/amd64,linux/arm64 .
 
