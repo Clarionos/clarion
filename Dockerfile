@@ -1,5 +1,10 @@
 FROM ubuntu:focal
 
+COPY . /clarion
+
+ENV WASI_SDK_PREFIX=/opt/wasi-sdk-12.0
+ENV PATH=/opt/node-v14.16.0-linux-x64/bin:$PATH
+
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
     && apt-get install -yq  \
@@ -19,14 +24,10 @@ RUN cd /opt \
     && tar xf wasi-sdk-12.0-linux.tar.gz \
     && curl -LO https://nodejs.org/dist/v14.16.0/node-v14.16.0-linux-x64.tar.xz \
     && tar xf node-v14.16.0-linux-x64.tar.xz \
-    && export PATH="/opt/node-v14.16.0-linux-x64/bin:$PATH" \
     && npm i -g yarn
 
-ENV WASI_SDK_PREFIX=/opt/wasi-sdk-12.0
-ENV PATH=/opt/node-v14.16.0-linux-x64/bin:$PATH
-
-RUN mkdir -p build-docker && \
-        cd build-docker && \
+RUN cd clarion && \
+    mkdir build && \
         cmake -DCMAKE_BUILD_TYPE=Release .. && \
         make -j$(nproc) && \
         ctest -j$(nproc) && \
