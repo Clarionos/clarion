@@ -1,6 +1,6 @@
 Design:
 
-1. Each node can have many user
+1. Each node can have many users
 2. Each user can publish N messages (from themselves or other users)
 3. Each node stores X bytes and prunes oldest messages first
 4. Each node is therefore a database of
