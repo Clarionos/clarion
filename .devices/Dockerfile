@@ -7,7 +7,7 @@ COPY . /clarion
 
 ENV WASI_SDK_PREFIX=/opt/wasi-sdk
 
-RUN sudo pacman-mirrors --country Canada,United_Statessudo pacman-mirrors --country Canada,United_States
+RUN pacman-mirrors --country Canada,United_States
 
 RUN pacman -Syyu --noconfirm base-devel binaryen cmake curl git boost git openssl gmp clang ninja yarn
 
