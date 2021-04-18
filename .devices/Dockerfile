@@ -7,8 +7,6 @@ COPY . /clarion
 
 ENV WASI_SDK_PREFIX=/opt/wasi-sdk
 
-RUN pacman-mirrors --country Canada,United_States
-
 RUN pacman -Syyu --noconfirm base-devel binaryen cmake curl git boost git openssl gmp clang ninja yarn
 
 RUN git clone https://github.com/WebAssembly/wasi-sdk/ --branch wasi-sdk-12 --recursive
