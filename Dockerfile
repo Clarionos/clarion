@@ -24,3 +24,10 @@ RUN cd /opt \
 
 ENV WASI_SDK_PREFIX=/opt/wasi-sdk-12.0
 ENV PATH=/opt/node-v14.16.0-linux-x64/bin:$PATH
+
+RUN mkdir -p build-docker && \
+        cd build-docker && \
+        cmake -DCMAKE_BUILD_TYPE=Release .. && \
+        make -j$(nproc) && \
+        ctest -j$(nproc) && \
+        mkdir -p clariondata
