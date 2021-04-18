@@ -1,9 +1,6 @@
-name: docker
+name: docker build
 
-on:
-  push:
-    branches:
-      - 'master'
+on: [push, pull_request]
 
 jobs:
   docker:
