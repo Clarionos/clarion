@@ -7,7 +7,7 @@ COPY . /clarion
 
 ENV WASI_SDK_PREFIX=/opt/wasi-sdk
 
-RUN pacman -Syyu --noconfirm base-devel binaryen cmake curl git boost git openssl gmp clang ninja yarn
+RUN pacman -Syyu --noconfirm base-devel binaryen cmake curl git boost git openssl gmp clang ninja yarn python
 
 RUN git clone https://github.com/WebAssembly/wasi-sdk/ --branch wasi-sdk-12 --recursive
 
@@ -22,4 +22,3 @@ RUN cd /clarion && \
                 make -j$(nproc) && \
                 ctest -j$(nproc) && \
                 mkdir -p clariondata
-
