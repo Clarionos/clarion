@@ -27,7 +27,8 @@ RUN cd /opt \
     && npm i -g yarn
 
 RUN cd /clarion && \
-    mkdir build && \
+        mkdir build && \
+        cd build && \
         cmake -DCMAKE_BUILD_TYPE=Release .. && \
         make -j$(nproc) && \
         ctest -j$(nproc) && \
