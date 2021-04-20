@@ -12,7 +12,7 @@ RUN pacman -Syyu --noconfirm base-devel binaryen cmake curl git boost git openss
 RUN git clone https://github.com/WebAssembly/wasi-sdk/ --branch wasi-sdk-12 --recursive
 
 RUN cd wasi-sdk && \
-        make -j24 && \
+        make -j$(nproc) && \
         cp -r build/install/opt/wasi-sdk /opt
 
 RUN cd /clarion && \
