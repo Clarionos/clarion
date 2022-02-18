@@ -32,10 +32,10 @@ namespace clio {
           *
           */
          constexpr auto proxyptr()const { 
-             return (reinterpret_cast<const ProxyObject*>( reinterpret_cast<const char*>(this)-sizeof(*this)*(I+1)) );
+             return (reinterpret_cast<BOOST_MAY_ALIAS const ProxyObject*>( reinterpret_cast<const char*>(this)-sizeof(*this)*(I+1)) );
          }
          constexpr auto proxyptr(){ 
-             return (reinterpret_cast<ProxyObject*>( reinterpret_cast<char*>(this)-sizeof(*this)*(I+1)) );
+             return (reinterpret_cast<BOOST_MAY_ALIAS ProxyObject*>( reinterpret_cast<char*>(this)-sizeof(*this)*(I+1)) );
          }
          constexpr const auto& get()const { return *(proxyptr()->template get<I,Name,mptr>()); }
          constexpr auto& get() { return *(proxyptr()->template get<I,Name,mptr>()); }

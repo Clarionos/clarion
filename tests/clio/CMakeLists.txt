@@ -1,3 +1,5 @@
+add_compile_options( -Wall -Wstrict-aliasing -fstrict-aliasing )
+
 if(DEFINED IS_NATIVE)
     find_package(Threads REQUIRED)
     add_executable(clio-tests 

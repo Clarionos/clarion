@@ -116,7 +116,7 @@ namespace fc { namespace crypto { namespace r1 {
         if (!BN_bin2bn(msg, msglen, e)) { ret=-1; goto err; }
         if (8*msglen > n) BN_rshift(e, e, 8-(n & 7));
         zero = BN_CTX_get(ctx);
-        if (!BN_zero(zero)) { ret=-1; goto err; }
+        BN_zero(zero);
         if (!BN_mod_sub(e, zero, e, order, ctx)) { ret=-1; goto err; }
         rr = BN_CTX_get(ctx);
         if (!BN_mod_inverse(rr, r, order, ctx)) { ret=-1; goto err; }

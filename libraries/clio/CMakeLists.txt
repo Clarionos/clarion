@@ -1,6 +1,7 @@
 add_library( clio INTERFACE )
 target_link_libraries( clio INTERFACE rapidjson )
 target_include_directories( clio INTERFACE include ${Boost_INCLUDE_DIRS} )
+add_compile_options( -Wall -Wstrict-aliasing )
 
 target_sources( clio INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/clio/fpconv.h
