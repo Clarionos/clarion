@@ -401,4 +401,13 @@ TEST_CASE("benchmark")
       std::cout << "pack json: " << std::chrono::duration<double, std::milli>(delta).count()
                 << " ms  size: " << s << "\n";
    }
+
+
+   std::vector<char> buffer;
+   buffer.resize(4);
+   buffer[0] = 1;
+   buffer[1] = 2;
+   buffer[2] = 3;
+   buffer[3] = 4;
+
 }

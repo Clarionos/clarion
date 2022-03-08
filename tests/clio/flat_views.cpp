@@ -17,6 +17,7 @@
 
 #include <chrono>
 #include <clio/flatbuf.hpp>
+//#include <clio/safeflatbuf.hpp>
 
 struct non_ref_nest
 {
@@ -78,6 +79,7 @@ struct root
 };
 CLIO_REFLECT(root, other, fatptr);
 
+
 TEST_CASE("flatptr")
 {
    constexpr uint32_t offseta =
@@ -117,7 +119,7 @@ TEST_CASE("flatptr")
    std::cout << "fpsize:  " << clio::flatpack_size<flat_object>() << "\n";
    //    std::cerr<< "sub.a: " << std::hex << me->sub->a<<"\n";
    std::cerr << "sub_view->get()->a: \n";
-   int x = me->sub_view->a;
+   int x = me->sub_view()->a();
    std::cerr << "sub_view.a: " << std::hex << x << "\n";
    /*
 
@@ -137,7 +139,7 @@ TEST_CASE("flatview")
    tester.y = 99.99;
    tester.veci = {1, 2, 3, 4, 6};
    tester.vecns = {{.myd = 33.33}, {}};
-   tester.nested = {{.x = 11, .y = 3.21, .nested = {{.x = 88}}}, {.x = 33, .y = .123}};
+   tester.nested = {{.x = 11, .y = 3.21, .nested = {{.x = 88, .y=.321}}}, {.x = 33, .y = .123}};
    tester.sub.substr = "sub str";
    tester.sub.ns.myd = .9876;
    tester.sub.ns.my16 = 33;
@@ -146,14 +148,16 @@ TEST_CASE("flatview")
    tester.sub_view = sub_obj{.a = 987, .b = 654, .substr = "subviewstr"};
 
    clio::flat_ptr<flat_object> me(tester);
+   clio::flat_ptr<flat_object> sme(tester);
    std::cerr << "me.size: " << me.size() << "\n";
+   std::cerr << "sme.size: " << sme.size() << "\n";
 
    auto start = std::chrono::steady_clock::now();
    uint64_t sum = 0;
    for (uint32_t i = 0; i < 10000; ++i)
    {
-      for (uint32_t x = 0; x < me->veci->size(); ++x)
-         sum += me->veci[x];
+      for (uint32_t x = 0; x < me->veci()->size(); ++x)
+         sum += me->veci()[x];
    }
    auto end = std::chrono::steady_clock::now();
    auto delta = end - start;
@@ -161,6 +165,26 @@ TEST_CASE("flatview")
    auto view_time = (delta).count();
    std::cout << "sum veci via view:    " << std::chrono::duration<double, std::milli>(delta).count()
              << " ms\n";
+
+
+
+   start = std::chrono::steady_clock::now();
+   sum = 0;
+   for (uint32_t i = 0; i < 10000; ++i)
+   {
+      for (uint32_t x = 0; x < sme->veci()->size(); ++x)
+         sum += sme->veci()[x];
+   }
+   end = std::chrono::steady_clock::now();
+   delta = end - start;
+
+   view_time = (delta).count();
+   std::cout << "sum veci via safe view:    " << std::chrono::duration<double, std::milli>(delta).count()
+             << " ms\n\n";
+
+
+
+
 
    start = std::chrono::steady_clock::now();
    sum = 0;
@@ -178,12 +202,22 @@ TEST_CASE("flatview")
 
    std::cout << "view runtime: " << 100 * double(view_time) / real_time << "% of real\n";
 
-   std::cout << "sub.substr: " << me->sub->substr << "\n";
+   std::cout << "sub.substr: " << me->sub()->substr() << "\n";
+   std::cout << "sub.substr: " << sme->sub()->substr() << "\n";
 
+   //std::string d = sme->sub()->a;
+   std::cout << "sub.substr: " << sme->sub()->a()<< "\n";
+
+
+   /*
    std::cout << "x: " << me->x << "\n";
+   std::cout << "x: " << sme->x() << "\n";
    std::cout << "y: " << me->y << "\n";
+   std::cout << "y: " << sme->y() << "\n";
    std::cout << "z: " << me->z << "\n";
+   std::cout << "z: " << sme->z() << "\n";
    std::cout << "veci[0]: " << me->veci[0] << "\n";
+   std::cout << "veci[0]: " << sme->veci()[0] << "\n";
    std::cout << "veci[1]: " << me->veci[1] << "\n";
    std::cout << "veci[2]: " << me->veci[2] << "\n";
    std::cout << "veci[3]: " << me->veci[3] << "\n";
@@ -201,6 +235,7 @@ TEST_CASE("flatview")
    std::cout << "nested[0].z: " << me->nested[0].z << "\n";
    std::cout << "nested[0].nested[0].x: " << me->nested[0].nested[0].x << "\n";
    std::cout << "nested[0].nested[0].y: " << me->nested[0].nested[0].y << "\n";
+   std::cout << "safe nested[0].nested[0].y: " << sme->nested()[0].nested()[0].y() << "\n";
    std::cout << "nested[1].z: " << me->nested[1].z << "\n";
    std::cout << "nested[1].x: " << me->nested[1].x << "\n";
    std::cout << "nested[1].y: " << me->nested[1].y << "\n";
@@ -208,16 +243,24 @@ TEST_CASE("flatview")
    std::cout << "sub.b: " << me->sub->b << "\n";
    std::cout << "sub.ns.myd: " << me->sub->ns->myd << "\n";
    std::cout << "sub.ns.my16: " << me->sub->ns->my16 << "\n";
+   */
+   std::cout << "nested[0].size " << me->nested()->size() <<"\n";
+   std::cout << "nested[0].x: " << me->nested()[1].x() << "\n";
+   std::cout << "nested[0].y: " << me->nested()[1].y() << "\n";
+   std::cout << "nested[0].nested.size " << me->nested()[0].nested()->size() <<"\n";
+   std::cout << "nested[0].nested[0].x: " << me->nested()[0].nested()[0].x() << "\n";
+   std::cout << "nested[0].nested[0].y: " << me->nested()[0].nested()[0].y() << "\n";
 
    clio::input_stream in(me.data(), me.size());
    clio::flatcheck<flat_object>(in);
 
-   std::cout << "sub_view.a: " << me->sub_view->a << "\n";
+   std::cout << "sub_view.a: " << me->sub_view()->a() << "\n";
    //    std::cout << "sub_view.b: " << me->sub_view->b<<"\n";
 
    std::cout << "tester.sub.substr: " << tester.sub.substr << "\n";
 
    flat_object copy = me;  /// unpacks from buffer into full object
+   /*
    std::cout << "copy.sub.a: " << copy.sub.a << "\n";
    std::cout << "copy.sub.b: " << copy.sub.b << "\n";
    std::cout << "copy.sub.ns.myd: " << copy.sub.ns.myd << "\n";
@@ -229,4 +272,5 @@ TEST_CASE("flatview")
 
    std::cout << "non_ref->real: " << me->non_ref->real << "\n";
    std::cout << "non_ref->nrn.lite: " << me->non_ref->nrn.lite << "\n";
+   */
 }

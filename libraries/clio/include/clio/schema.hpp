@@ -5,6 +5,7 @@
 #include <map>
 #include <clio/reflect.hpp>
 #include <clio/varint.hpp>
+#include <clio/flatbuf.hpp>
 
 namespace clio {
     using std::string;
@@ -77,7 +78,9 @@ namespace clio {
         struct member {
             string                     name;
             type_name                  type;
-            int32_t                    number;
+            int32_t                    number = 0;
+            uint32_t                   offset = 0;
+            uint32_t                   size   = 0;
 
             template<typename R, typename T, typename... Args>
             void set_params( std::initializer_list<const char*> names, R (T::*method)(Args...) ) {
@@ -123,13 +126,15 @@ namespace clio {
         }
 
         vector<member> members;
+        uint32_t       size = 0; /// size of the flat, non-dynamic part
+        bool           dynamic = false; /// binary size may vary 
     };
 
     using object_member       = object_type::member;
     using object_method_param = object_type::member::param;
     CLIO_REFLECT( object_method_param, name, type )
-    CLIO_REFLECT( object_member, name, type, number, params )
-    CLIO_REFLECT( object_type, members )
+    CLIO_REFLECT( object_member, name, type, number, offset, size , params )
+    CLIO_REFLECT( object_type, members, size, dynamic )
 
     struct typedef_type {
         type_name type;
@@ -254,13 +259,18 @@ namespace clio {
                 auto n = get_type_name<T>(); 
                 if( add_type<T>( object_type(), on_generate ) ) {
                     object_type ot;
+                    uint32_t offset = 0;
                     reflect<T>::for_each( [&]( const meta& r, auto m ) {
                          if constexpr( not std::is_member_function_pointer_v<decltype(m)> ) {
                             using member_type = std::decay_t<decltype( static_cast<std::decay_t<T>*>(nullptr)->*m )>;
                             generate<member_type>( on_generate );
 
                             auto tn = get_type_name<member_type>(); 
-                            ot.members.push_back( { .name = r.name, .type = tn, .number = r.number } );
+                            auto size = flatpack_size<member_type>();
+
+                            ot.members.push_back( { .name = r.name, .type = tn, .number = r.number, .offset = offset, .size = size } );
+
+                            offset += size;
                          } else {
                             using member_type = decltype(result_of( m ));
                             generate<member_type>( on_generate );
@@ -269,6 +279,7 @@ namespace clio {
                             ot.members.back().set_params( r.param_names, m );
                          }
                     });
+                    ot.size = offset;
                     types[n] = ot;
                 }
             }

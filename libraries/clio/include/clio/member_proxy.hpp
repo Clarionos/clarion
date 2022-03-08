@@ -2,23 +2,33 @@
 
 namespace clio {
 
+
+    /**
+     *  This works just like member_proxy, except instead of using "undefined behavior" to grab
+     *  a pointer based upon an assumed memory layout and potentially aliasing pointers, this
+     *  member proxy takes the proxy in the constructor.
+     */
     template<uint32_t I, uint64_t Name, auto mptr, typename ProxyObject>
     struct member_proxy {
+        private:
+         ProxyObject& _proxy;
+
+        public:
+         member_proxy( ProxyObject& o ):_proxy(o){}
+
+
          /**
           *  This object is created on a type created by the macro, I represents the member number in the
-          *  containing type. The containing type's first member is a ProxyObject. This function does the
-          *  pointer math necessary to find the ProxyObject.
+          *  containing type. The containing type's first member is a ProxyObject. 
           *
-          *  Alternatively the macro code would have to initialize every member_proxy with this, which would
-          *  bloat the size of the member_proxy object
           *  
-          *  flat_view<T> => reflect<T>::member_proxy<proxy_impl>
+          *  safe_flat_view<T> => reflect<T>::member_proxy<proxy_impl>
           *
-          *  struct member_proxy<proxy_impl>  {
-          *     proxy_impl proxy___;
-          *     member_proxy<0, ptr, proxy_impl> member_zero
-          *     member_proxy<1, ptr, proxy_impl> member_one
-          *     member_proxy<2, ptr, proxy_impl> member_two
+          *  struct proxy<proxy_impl>  {
+          *     proxy_impl _clio_proxy_obj;
+          *     member_proxy<0, ptr, proxy_impl> member_zero() { return {_clio_proxy_obj}; }
+          *     member_proxy<1, ptr, proxy_impl> member_one(){_clio_proxy_obj}; }
+          *     member_proxy<2, ptr, proxy_impl> member_two(){_clio_proxy_obj}; }
           *  }
           *  a packed flat buffer.  
           *
@@ -27,33 +37,37 @@ namespace clio {
           *  the address of member_proxy<T> because it is the first element. 
           *
           *  because member_proxy has no values it takes 1 byte in member_proxy and the value of that byte
-          *  is never read by member_proxy... member_proxy always gets the address of proxy___ and then
+          *  is never read by member_proxy... member_proxy always gets the address of _clio_proxy_obj and then
           *  does offset math.
           *
           */
+         /*
          constexpr auto proxyptr()const { 
-             return (reinterpret_cast<BOOST_MAY_ALIAS const ProxyObject*>( reinterpret_cast<const char*>(this)-sizeof(*this)*(I+1)) );
+             return _proxy;
          }
          constexpr auto proxyptr(){ 
-             return (reinterpret_cast<BOOST_MAY_ALIAS ProxyObject*>( reinterpret_cast<char*>(this)-sizeof(*this)*(I+1)) );
+             return _proxy;
          }
-         constexpr const auto& get()const { return *(proxyptr()->template get<I,Name,mptr>()); }
-         constexpr auto& get() { return *(proxyptr()->template get<I,Name,mptr>()); }
+         */
+         constexpr auto& get()const { return *(_proxy.template get<I,Name,mptr>()); }
+         constexpr auto& get()      { return *(_proxy.template get<I,Name,mptr>()); }
 
          template<typename... Ts>
          constexpr auto operator()(Ts&&... args) { 
-             return proxyptr()->template call<I,Name,mptr>( std::forward<Ts>(args)...); 
+             return _proxy.template call<I,Name,mptr>( std::forward<Ts>(args)...); 
          }
          template<typename... Ts>
          constexpr auto operator()(Ts&&... args)const { 
-             return proxyptr()->template call<I,Name,mptr>( std::forward<Ts>(args)...); 
+             return _proxy.template call<I,Name,mptr>( std::forward<Ts>(args)...); 
          }
 
-         constexpr auto operator->(){ return (proxyptr()->template get<I,Name,mptr>()); }
-         constexpr const auto operator->()const { return (proxyptr()->template get<I,Name,mptr>()); }
+         constexpr auto* operator->(){ return (_proxy.template get<I,Name,mptr>()); }
+         constexpr const auto* operator->()const { return (_proxy.template get<I,Name,mptr>()); }
 
          constexpr auto& operator*(){ return get(); }
          constexpr const auto& operator*()const { return get(); }
+
+         constexpr auto& mget(){ return get(); }
 
          template<typename T>
          constexpr auto& operator[]( T&& k ) { return get()[ std::forward<T>(k)]; }
@@ -75,12 +89,9 @@ namespace clio {
          template<typename R>
          operator R ()const { return get(); }
 
-         /*
-         operator decltype( ((ProxyObject*)nullptr)->template get<I,Name,mptr>())()
-                 { return get(); }
-         operator decltype( ((const ProxyObject*)nullptr)->template get<I,Name,mptr>()) ()const
-                 { return get(); }
-                 */
+         bool valid()const { return _proxy.template get<I,Name,mptr>() != nullptr; }
+         bool valid()      { return _proxy.template get<I,Name,mptr>() != nullptr; }
+
     };
 
 } /// clio

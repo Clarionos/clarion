@@ -49,6 +49,7 @@ namespace clio {
     struct meta {
         const char*                        name;
         int32_t                            number;
+        uint64_t                           offset = 0;
         std::initializer_list<const char*> param_names;
     };
 
@@ -66,18 +67,21 @@ namespace clio {
 
 
  #define CLIO_REFLECT_FOREACH_PB_INTERNAL( r, OP, member) \
+       { auto off = __builtin_offsetof(OP,member); \
       lambda( clio::meta{ .number = CLIO_REFLECT_FILTER_IDX member, \
                     .name   = CLIO_REFLECT_FILTER_NAME_STR member, \
+                    .offset = off,\
                     .param_names = CLIO_REFLECT_FILTER_PARAMS member }, \
-                    &OP::CLIO_REFLECT_FILTER_NAME member);\
+                    &OP::CLIO_REFLECT_FILTER_NAME member);}\
 
       
  #define CLIO_REFLECT_FOREACH_INTERNAL( r, OP, i, member) \
+       { auto off = __builtin_offsetof(OP,member); \
       (void)lambda( clio::meta{ \
                           .name =  BOOST_PP_STRINGIZE(member), \
-                          .number = i+1 , \
+                          .number = i+1 , .offset = off \
                          }, \
-              &OP::member);\
+              &OP::member);}\
 
  #define CLIO_REFLECT_MEMBER_BY_STR_INTERNAL( r, OP, member) \
    if( BOOST_PP_STRINGIZE(member) == m ) {            \
@@ -96,24 +100,26 @@ namespace clio {
 #define CLIO_REFLECT_PROXY_MEMBER_BY_IDX_INTERNAL( r, OP, I, member ) \
     template<typename...Args> \
     auto member( Args&&... args ) { \
-        return proxy___.call( clio::meta{ .number = I+1, \
+        return _clio_proxy_obj.call( clio::meta{ .number = I+1, \
                                           .name = BOOST_PP_STRINGIZE(member)\
                                         }, \
                              &OP::member, std::forward<Args>(args)... ); \
     } \
 
 
-#define CLIO_REFLECT_MPROXY_MEMBER_BY_IDX_INTERNAL( r, OP, I, member ) \
-    clio::member_proxy<I,clio::hash_name(BOOST_PP_STRINGIZE(member)),&OP::member,ProxyObject> member; 
+#define CLIO_REFLECT_SMPROXY_MEMBER_BY_IDX_INTERNAL( r, OP, I, member ) \
+    clio::member_proxy<I,clio::hash_name(BOOST_PP_STRINGIZE(member)),&OP::member,ProxyObject> member(){ return _clio_proxy_obj; }\
+    clio::member_proxy<I,clio::hash_name(BOOST_PP_STRINGIZE(member)),&OP::member,const ProxyObject> member()const{ return _clio_proxy_obj; } 
 
-#define CLIO_REFLECT_MPROXY_MEMBER_BY_IDX_HELPER( QUERY_CLASS, MEMBER_IDXS ) \
-    BOOST_PP_SEQ_FOR_EACH_I( CLIO_REFLECT_MPROXY_MEMBER_BY_IDX_INTERNAL, QUERY_CLASS, MEMBER_IDXS )
+
+#define CLIO_REFLECT_SMPROXY_MEMBER_BY_IDX_HELPER( QUERY_CLASS, MEMBER_IDXS ) \
+    BOOST_PP_SEQ_FOR_EACH_I( CLIO_REFLECT_SMPROXY_MEMBER_BY_IDX_INTERNAL, QUERY_CLASS, MEMBER_IDXS )
 
 
 #define CLIO_REFLECT_PROXY_MEMBER_BY_PB_INTERNAL( r, OP, member ) \
     template<typename...Args> \
     auto CLIO_REFLECT_FILTER_NAME member ( Args&&... args ) { \
-        return proxy___.call( clio::meta{ .number = CLIO_REFLECT_FILTER_IDX member, \
+        return _clio_proxy_obj.call( clio::meta{ .number = CLIO_REFLECT_FILTER_IDX member, \
                                           .name   = CLIO_REFLECT_FILTER_NAME_STR member, \
                                           .param_names = CLIO_REFLECT_FILTER_PARAMS member }, \
                               &OP::CLIO_REFLECT_FILTER_NAME member, std::forward<Args>(args)... ); \
@@ -180,14 +186,14 @@ namespace clio {
        template<typename ProxyObject> \
        struct proxy { \
             template<typename... Args> \
-            proxy( Args&&... args ):proxy___( std::forward<Args>(args)... ){}\
-            ProxyObject* operator->(){ return &proxy___; } \
-            const ProxyObject* operator->()const{ return &proxy___; } \
-            ProxyObject& operator*(){ return proxy___; } \
-            const ProxyObject& operator*()const{ return proxy___; } \
+            proxy( Args&&... args ):_clio_proxy_obj( std::forward<Args>(args)... ){}\
+            ProxyObject* operator->(){ return &_clio_proxy_obj; } \
+            const ProxyObject* operator->()const{ return &_clio_proxy_obj; } \
+            ProxyObject& operator*(){ return _clio_proxy_obj; } \
+            const ProxyObject& operator*()const{ return _clio_proxy_obj; } \
             CLIO_REFLECT_PROXY_MEMBER_BY_IDX_HELPER(QUERY_CLASS, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)) \
            private: \
-             ProxyObject proxy___; \
+             ProxyObject _clio_proxy_obj; \
        }; \
        */
 
@@ -221,16 +227,16 @@ namespace clio {
       }                                                                                           \
        template<typename ProxyObject> \
        struct proxy { \
-           private: \
-             ProxyObject proxy___; \
-           public: \
+          private: \
+            ProxyObject _clio_proxy_obj; \
+          public: \
             template<typename... Args> \
-            proxy( Args&&... args ):proxy___( std::forward<Args>(args)... ){}\
-            ProxyObject* operator->(){ return &proxy___; } \
-            const ProxyObject* operator->()const{ return &proxy___; } \
-            ProxyObject& operator*(){ return proxy___; } \
-            const ProxyObject& operator*()const{ return proxy___; } \
-            CLIO_REFLECT_MPROXY_MEMBER_BY_IDX_HELPER(QUERY_CLASS, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)) \
+            proxy( Args&&... args ):_clio_proxy_obj( std::forward<Args>(args)... ){}\
+            ProxyObject* operator->(){ return &_clio_proxy_obj; } \
+            const ProxyObject* operator->()const{ return &_clio_proxy_obj; } \
+            ProxyObject& operator*(){ return _clio_proxy_obj; } \
+            const ProxyObject& operator*()const{ return _clio_proxy_obj; } \
+            CLIO_REFLECT_SMPROXY_MEMBER_BY_IDX_HELPER(QUERY_CLASS, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)) \
        }; \
    }; \
    reflect_impl_##QUERY_CLASS get_reflect_impl(const QUERY_CLASS&);

@@ -14,6 +14,7 @@ enum class stream_error {
    no_error,
    overrun,
    underrun,
+   doubleread,
    float_error,
    varuint_too_big,
    invalid_varuint_encoding,
@@ -188,6 +189,7 @@ struct fixed_buf_stream {
    auto get_pos()const { return pos; }
 
    size_t remaining() { return end - pos; }
+   size_t consumed()const { return pos-begin; }
 };
 
 struct size_stream {
@@ -197,6 +199,7 @@ struct size_stream {
    void write(char ch) {
       ++size;
    }
+   size_t consumed()const { return size; }
 
    void write(const void* src, size_t size) {
       this->size += size;
@@ -294,6 +297,11 @@ struct input_stream {
 
    auto get_pos()const { return pos; }
 
+   void checkread( size_t size) {
+      if (size > size_t(end - pos))
+         throw_error( stream_error::overrun );
+      pos += size;
+   }
    void read(void* dest, size_t size) {
       if (size > size_t(end - pos))
          throw_error( stream_error::overrun );
@@ -319,5 +327,79 @@ struct input_stream {
       pos += size;
    }
 };
+
+
+struct check_input_stream {
+   const char* begin;
+   const char* pos;
+   const char* end;
+   size_t  total_read = 0;
+
+   check_input_stream() : pos{ nullptr }, end{ nullptr } {}
+   check_input_stream(const char* pos, size_t size) :begin(pos),pos{ pos },end{ pos + size } {
+      if ( size < 0 )
+         throw_error( stream_error::overrun );
+   }
+   check_input_stream(const char* pos, const char* end) : begin(pos),pos{ pos }, end{ end } {
+      if ( end < pos )
+         throw_error( stream_error::overrun );
+   }
+   check_input_stream(const std::vector<char>& v) : begin(v.data()), pos{ v.data() }, end{ v.data() + v.size() } {}
+   check_input_stream(std::string_view v) : begin(v.data()),pos{ v.data() }, end{ v.data() + v.size() } {}
+   check_input_stream(const check_input_stream&) = default;
+
+   check_input_stream& operator=(const check_input_stream&) = default;
+
+   size_t remaining() { return end - pos; }
+
+   void check_available(size_t size) {
+      if (size > size_t(end - pos))
+         throw_error(stream_error::overrun);
+   }
+
+   auto get_pos()const { return pos; }
+
+   void checkread( size_t size) {
+      if (size > size_t(end - pos))
+         throw_error( stream_error::overrun );
+      pos += size;
+      total_read += size;
+   }
+   void read(void* dest, size_t size) {
+      if (size > size_t(end - pos))
+         throw_error( stream_error::overrun );
+      memcpy(dest, pos, size);
+      pos += size;
+      total_read += size;
+   }
+
+   template <typename T>
+   void read_raw(T& dest) {
+      read(&dest, sizeof(dest));
+   }
+
+   void skip(size_t size) {
+      if (size > size_t(end - pos))
+         throw_error(stream_error::overrun);
+      pos += size;
+      total_read += size;
+   }
+
+   void read_reuse_storage(const char*& result, size_t size) {
+      if (size > size_t(end - pos))
+         throw_error( stream_error::overrun );
+      result = pos;
+      pos += size;
+      total_read += size;
+   }
+
+
+};
+
+
+
+
+
+
 
 } // namespace clio

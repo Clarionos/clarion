@@ -176,7 +176,7 @@ struct name {
       return name{ result };
    }
 };
-CLIO_REFLECT( name, value )
+//CLIO_REFLECT( name, value )
 
 
 template <typename S>

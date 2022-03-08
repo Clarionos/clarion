@@ -2,6 +2,7 @@
 #include <clio/error.hpp>
 #include <clio/stream.hpp>
 #include <clio/name.hpp>
+#include <clio/unaligned_type.hpp>
 
 #ifdef BOOST_NO_MAY_ALIAS
 #warning MAY_ALIAS not defined
@@ -14,11 +15,13 @@ namespace clio {
     template<typename T>
     class flat_ptr;
 
+
     template<typename>
     struct is_flat_ptr : std::false_type {};
     
     template<typename T>
     struct is_flat_ptr<flat_ptr<T>> : std::true_type { using value_type = T; };
+
 
     template<typename T>
     class flat {
@@ -44,7 +47,7 @@ namespace clio {
             return (view_type*)(nullptr);
         }
         else if constexpr( std::is_trivially_copyable<T>::value ) 
-            return (T*)(nullptr);
+            return (unaligned_type<T>*)(nullptr);
         else
             return (flat<T>*)nullptr; 
     }
@@ -53,7 +56,10 @@ namespace clio {
     using flat_view = std::remove_pointer_t<decltype(get_view_type<T>())>;
 
     struct offset_ptr {
-        uint32_t offset;
+        offset_ptr(uint32_t i=0):offset(i){}
+        offset_ptr& operator=(uint32_t i){ offset = i; return *this; }
+
+        unaligned_type<uint32_t> offset;
 
         template<typename T>
         auto get()const;
@@ -181,10 +187,10 @@ namespace clio {
             char* out_ptr = reinterpret_cast<char*>(this)+offset;
 
             if constexpr ( contains_offset_ptr<member_type>() ) {
-                BOOST_MAY_ALIAS clio::offset_ptr* ptr = reinterpret_cast<BOOST_MAY_ALIAS clio::offset_ptr*>(out_ptr);
+                 clio::offset_ptr* ptr = reinterpret_cast< clio::offset_ptr*>(out_ptr);
                 return ptr->get<member_type>(); 
             } else  {
-                return reinterpret_cast<BOOST_MAY_ALIAS member_type*>(out_ptr);
+                return reinterpret_cast< member_type*>(out_ptr);
             }
         }
 
@@ -199,10 +205,10 @@ namespace clio {
             auto out_ptr = reinterpret_cast<const char*>(this)+offset;
 
             if constexpr ( contains_offset_ptr<member_type>() ) {
-                const clio::offset_ptr* ptr = reinterpret_cast<BOOST_MAY_ALIAS const clio::offset_ptr*>(out_ptr);
+                const clio::offset_ptr* ptr = reinterpret_cast< const clio::offset_ptr*>(out_ptr);
                 return ptr->get<member_type>(); 
             } else  {
-                return reinterpret_cast<BOOST_MAY_ALIAS const member_type*>(out_ptr);
+                return reinterpret_cast< const member_type*>(out_ptr);
             }
         }
 
@@ -215,7 +221,7 @@ namespace clio {
     class flat<flat_ptr<T> > {
         public:
             auto get() {
-                return reinterpret_cast< BOOST_MAY_ALIAS decltype( get_view_type<T>() ) >(_data);
+                return reinterpret_cast<  decltype( get_view_type<T>() ) >(_data);
             }
         private:
             uint32_t _size = 0;
@@ -238,15 +244,15 @@ namespace clio {
                 return stream << str.c_str();
             }
         private:
-            uint32_t _size = 0;
-            char     _data[];
+            unaligned_type<uint32_t> _size = 0;
+            char                     _data[];
     };
 
     template<typename... Ts>
     class flat<std::variant<Ts...>> {
         public:
-            uint64_t       type = 0;
-            uint32_t       flat_data = 0;
+            unaligned_type<uint64_t>       type = 0;
+            unaligned_type<uint32_t>       flat_data = 0;
             offset_ptr     offset_data;
 
             flat() {
@@ -304,23 +310,23 @@ namespace clio {
 
     /// T == value of the array elements
     template<typename T>
-    class flat<std::vector<T>> {
+    class __attribute__((packed,aligned(1))) flat<std::vector<T>> {
         public:
             auto& operator[]( uint32_t index ) {
                 if( index >= _size )
                     throw_error( stream_error::overrun );
                 /** in this case the data is a series of offset_ptr<> */
                 if constexpr( std::is_same<T,std::string>::value ) {
-                    auto ptr_array =  reinterpret_cast<BOOST_MAY_ALIAS offset_ptr*>(_data);
-                    return *reinterpret_cast<BOOST_MAY_ALIAS flat<std::string>*>( ptr_array[index].get< std::vector<T> >() );
+                    auto ptr_array =  reinterpret_cast< offset_ptr*>(_data);
+                    return *reinterpret_cast< flat<std::string>*>( ptr_array[index].get< std::vector<T> >() );
                 } else if constexpr( contains_offset_ptr<T>() ) {
-                    auto ptr_array =  reinterpret_cast<BOOST_MAY_ALIAS offset_ptr*>(_data);
-                    return *reinterpret_cast<BOOST_MAY_ALIAS flat_view<T>*>( ptr_array[index].get< std::vector<T> >() );
+                    auto ptr_array =  reinterpret_cast< offset_ptr*>(_data);
+                    return *reinterpret_cast< flat_view<T>*>( ptr_array[index].get< std::vector<T> >() );
                 } else if constexpr ( reflect<T>::is_struct ) { /// the data is a series of packed T
                     const auto offset = index * flatpack_size<T>(); 
-                    return *reinterpret_cast<BOOST_MAY_ALIAS flat_view<T>*>( &_data[offset] );
+                    return *reinterpret_cast< flat_view<T>*>( &_data[offset] );
                 } else if constexpr ( std::is_trivially_copyable<T>::value ) {
-                    auto T_array =  reinterpret_cast<BOOST_MAY_ALIAS T*>(_data);
+                    auto T_array =  reinterpret_cast< T*>(_data);
                     return T_array[index];
                 } else {
                     T::is_not_a_known_flat_type;
@@ -332,17 +338,17 @@ namespace clio {
 
                 /** in this case the data is a series of offset_ptr<> */
                 if constexpr( std::is_same<T,std::string>::value ) {
-                    auto ptr_array =  reinterpret_cast<BOOST_MAY_ALIAS const offset_ptr*>(_data);
-                    return *reinterpret_cast<BOOST_MAY_ALIAS const flat<std::string>*>( ptr_array[index].get< std::vector<T> >() );
+                    auto ptr_array =  reinterpret_cast< const offset_ptr*>(_data);
+                    return *reinterpret_cast< const flat<std::string>*>( ptr_array[index].get< std::vector<T> >() );
                 }else if constexpr( contains_offset_ptr<T>() ) {
-                    auto ptr_array =  reinterpret_cast<BOOST_MAY_ALIAS const offset_ptr*>(_data+sizeof(offset_ptr)*index);
-                    const auto& r = *reinterpret_cast<BOOST_MAY_ALIAS const flat_view<T>*>( ptr_array->get< std::vector<T> >() );
+                    auto ptr_array =  reinterpret_cast< const offset_ptr*>(_data+sizeof(offset_ptr)*index);
+                    const auto& r = *reinterpret_cast< const flat_view<T>*>( ptr_array->get< std::vector<T> >() );
                     return r; 
                 } else if constexpr ( reflect<T>::is_struct ) { /// the data is a series of packed T
                     const auto offset = index * flatpack_size<T>(); 
-                    return *reinterpret_cast<BOOST_MAY_ALIAS const flat_view<T>*>( &_data[offset] );
+                    return *reinterpret_cast< const flat_view<T>*>( &_data[offset] );
                 } else if constexpr ( std::is_trivially_copyable<T>::value ) {
-                    auto T_array =  reinterpret_cast<BOOST_MAY_ALIAS const T*>(_data);
+                    auto T_array =  reinterpret_cast< const unaligned_type<T>*>(_data);
                     return T_array[index];
                 } else {
                     T::is_not_a_known_flat_type;
@@ -353,21 +359,24 @@ namespace clio {
             uint32_t size()const { return _size; }
 
         private:
-            uint32_t _size = 0;
+            unaligned_type<uint32_t> _size = 0;
             char     _data[];
     };
+
+
+
 
     template<typename T>
     auto offset_ptr::get()const {
         const auto ptr = ((char*)this)+offset;
         if constexpr( is_flat_ptr<T>::value ) {
-            return reinterpret_cast< BOOST_MAY_ALIAS decltype(get_view_type<typename T::value_type>()) >(ptr+4);
+            return reinterpret_cast<  decltype(get_view_type<typename T::value_type>()) >(ptr+4);
         } else if constexpr( reflect<T>::is_struct ) {
-            return reinterpret_cast<BOOST_MAY_ALIAS flat_view<T>*>(ptr);
+            return reinterpret_cast< flat_view<T>*>(ptr);
         } else if constexpr( std::is_same_v<std::string,T> ) {
-            return reinterpret_cast< BOOST_MAY_ALIAS flat<std::string>* >(ptr);
+            return reinterpret_cast<  flat<std::string>* >(ptr);
         } else if constexpr( is_std_vector<T>::value ) {
-            return reinterpret_cast< BOOST_MAY_ALIAS flat<T>* >(ptr);
+            return reinterpret_cast<  flat<T>* >(ptr);
         } else {
             T::is_not_reflected_for_offset_ptr;
         }
@@ -599,7 +608,7 @@ namespace clio {
 
                    if constexpr ( std::is_same_v<std::string,typename T::value_type> || is_std_vector<typename T::value_type>::value ) {
                        if( member.size() == 0 ) {
-                            offset_ptr ptr = { .offset = 0 };
+                            offset_ptr ptr(0);
                             stream.write( &ptr, sizeof(ptr) );
                             cur_pos += sizeof(ptr);
                             continue;
@@ -609,7 +618,7 @@ namespace clio {
                     size_stream size_str;
                     flatpack( member, size_str );
 
-                    offset_ptr ptr = { .offset = (alloc_pos - cur_pos) };
+                    offset_ptr ptr(alloc_pos - cur_pos);
 
                     alloc_pos += size_str.size; 
 
@@ -651,7 +660,7 @@ namespace clio {
 
                     if constexpr ( std::is_same_v<std::string,member_type> || is_std_vector<member_type>::value ) {
                        if( member.size() == 0 ) {
-                            offset_ptr ptr = { .offset = 0 };
+                            offset_ptr ptr( 0 );
                             stream.write( &ptr, sizeof(ptr) );
                             cur_pos += sizeof(ptr);
 
@@ -662,7 +671,7 @@ namespace clio {
                     size_stream size_str;
                     flatpack( member, size_str );
 
-                    offset_ptr ptr = { .offset = alloc_pos - cur_pos };
+                    offset_ptr ptr( alloc_pos - cur_pos );
 
                     if( ptr.offset == 0 ) exit(-1);
 
@@ -720,10 +729,10 @@ namespace clio {
             operator bool()const { return _size; };
 
             auto  operator->()      { 
-                return reinterpret_cast<BOOST_MAY_ALIAS flat_view<T>*>(_data.get()); 
+                return reinterpret_cast< flat_view<T>*>(_data.get()); 
             }
             auto  operator->()const { 
-                return reinterpret_cast<BOOST_MAY_ALIAS const flat_view<T>*>(_data.get()); 
+                return reinterpret_cast< const flat_view<T>*>(_data.get()); 
             }
             const char* data()const  { return _data.get(); }
             char*       data()       { return _data.get(); }
@@ -747,5 +756,6 @@ namespace clio {
             std::shared_ptr<char> _data;
             size_t                _size = 0;
     };
+
 
 } /// namespace clio
